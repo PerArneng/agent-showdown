@@ -15,7 +15,7 @@ def _container(console: InMemoryConsole) -> Container:
 def test_container_wires_a_working_engine() -> None:
     console = InMemoryConsole()
 
-    _container(console).engine().start()
+    _container(console).engine().start_game()
 
     assert console.lines[0] == "2025-09-10 \x1b[32mINFO\x1b[0m started"
     assert "2025-09-10 \x1b[32mINFO\x1b[0m player dummy-1 joined at (0,0)" in console.lines

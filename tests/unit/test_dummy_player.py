@@ -1,6 +1,8 @@
+from datetime import datetime
+
 from agent_showdown.interfaces.game import Board, Direction, GameView, Position
 from agent_showdown.modules.game import DummyPlayer
-from tests.fakes import FixedRandomizer
+from tests.fakes import FixedRandomizer, FrozenClock
 
 _VIEW = GameView(
     board=Board(width=3, height=3),
@@ -9,13 +11,23 @@ _VIEW = GameView(
 )
 
 
+def _player(
+    randomizer: FixedRandomizer, clock: FrozenClock, think_time: float = 0.5
+) -> DummyPlayer:
+    return DummyPlayer("dummy-1", randomizer, clock, think_time)
+
+
+def _clock() -> FrozenClock:
+    return FrozenClock(datetime(2025, 9, 10))
+
+
 def test_get_name_round_trips() -> None:
-    assert DummyPlayer("dummy-1", FixedRandomizer([0])).get_name() == "dummy-1"
+    assert _player(FixedRandomizer([0]), _clock()).get_name() == "dummy-1"
 
 
 def test_take_turn_returns_the_direction_the_randomizer_picked() -> None:
     directions = list(Direction)
-    player = DummyPlayer("dummy-1", FixedRandomizer([0, 3]))
+    player = _player(FixedRandomizer([0, 3]), _clock())
 
     first = player.take_turn(_VIEW).movement.moves
     second = player.take_turn(_VIEW).movement.moves
@@ -23,3 +35,13 @@ def test_take_turn_returns_the_direction_the_randomizer_picked() -> None:
     assert first == (first[0],) and len(first) == 1
     assert first[0].direction == directions[0]
     assert second[0].direction == directions[3]
+
+
+def test_it_thinks_once_per_turn_for_the_configured_time() -> None:
+    clock = _clock()
+    player = _player(FixedRandomizer([0, 0]), clock, think_time=0.25)
+
+    player.take_turn(_VIEW)
+    player.take_turn(_VIEW)
+
+    assert clock.slept == [0.25, 0.25]

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-showdown</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --line: #262b35;
+    --text: #e6e8ee;
+    --muted: #8b93a5;
+    --accent: #4c8dff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  aside {
+    width: 240px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+  h1 { margin: 0; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; }
+  h2 { margin: 0; font-size: 11px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  button {
+    padding: 10px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:disabled { background: var(--line); color: var(--muted); cursor: default; }
+  ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  li { display: flex; align-items: center; gap: 10px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .cell { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .empty, #status { color: var(--muted); }
+  #status { margin-top: auto; font-size: 13px; }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  canvas { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+</style>
+</head>
+<body>
+  <aside>
+    <h1>agent-showdown</h1>
+    <button id="start">Start game</button>
+    <h2>Players</h2>
+    <ul id="players"><li class="empty">None yet</li></ul>
+    <div id="status">Waiting.</div>
+  </aside>
+  <main><canvas id="board" width="600" height="600"></canvas></main>
+
+<script>
+const PALETTE = ["#4c8dff", "#ff5d7a", "#3ddc97", "#ffb454", "#c07cff", "#3ddbe0"];
+
+const canvas = document.getElementById("board");
+const context = canvas.getContext("2d");
+const startButton = document.getElementById("start");
+const playerList = document.getElementById("players");
+const status = document.getElementById("status");
+
+let board = null;
+let players = new Map();
+
+function reset() {
+  board = null;
+  players = new Map();
+  render();
+}
+
+function render() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (!board) {
+    renderPlayerList();
+    return;
+  }
+  const cellW = canvas.width / board.width;
+  const cellH = canvas.height / board.height;
+  const radius = Math.min(cellW, cellH) * 0.3;
+
+  context.strokeStyle = "#262b35";
+  context.lineWidth = 1;
+  for (let i = 0; i <= board.width; i++) {
+    const x = Math.round(i * cellW) + 0.5;
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.lineTo(x, canvas.height);
+    context.stroke();
+  }
+  for (let i = 0; i <= board.height; i++) {
+    const y = Math.round(i * cellH) + 0.5;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(canvas.width, y);
+    context.stroke();
+  }
+
+  for (const player of players.values()) {
+    context.fillStyle = player.color;
+    context.beginPath();
+    context.arc(
+      (player.position.x + 0.5) * cellW,
+      (player.position.y + 0.5) * cellH,
+      radius,
+      0,
+      Math.PI * 2
+    );
+    context.fill();
+  }
+  renderPlayerList();
+}
+
+function renderPlayerList() {
+  if (players.size === 0) {
+    playerList.innerHTML = '<li class="empty">None yet</li>';
+    return;
+  }
+  playerList.innerHTML = "";
+  for (const [name, player] of players) {
+    const item = document.createElement("li");
+    const swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.style.background = player.color;
+    const label = document.createElement("span");
+    label.textContent = name;
+    const cell = document.createElement("span");
+    cell.className = "cell";
+    cell.textContent = `${player.position.x},${player.position.y}`;
+    item.append(swatch, label, cell);
+    playerList.append(item);
+  }
+}
+
+function addPlayer(name, position) {
+  const player = { position, color: PALETTE[players.size % PALETTE.length] };
+  players.set(name, player);
+  return player;
+}
+
+function handle(event) {
+  switch (event.type) {
+    case "player_joined":
+      addPlayer(event.player, event.position);
+      break;
+    case "game_started":
+      board = event.board;
+      status.textContent = `Playing ${event.max_rounds} rounds.`;
+      break;
+    case "round_started":
+      status.textContent = `Round ${event.round_number}.`;
+      break;
+    case "player_moved": {
+      // A page opened mid-game never saw the join, so treat the move as the introduction.
+      const player = players.get(event.player) ?? addPlayer(event.player, event.destination);
+      player.position = event.destination;
+      break;
+    }
+    case "turn_failed":
+      status.textContent = `${event.player} failed its turn: ${event.reason}`;
+      break;
+    case "game_ended":
+      status.textContent = `Game over after ${event.rounds_played} rounds.`;
+      startButton.disabled = false;
+      return;
+  }
+  render();
+}
+
+startButton.addEventListener("click", async () => {
+  startButton.disabled = true;
+  status.textContent = "Starting.";
+  reset();
+  await fetch("/api/start", { method: "POST" });
+});
+
+const stream = new EventSource("/api/events");
+stream.onmessage = (message) => handle(JSON.parse(message.data));
+stream.onerror = () => { status.textContent = "Disconnected from the server."; };
+
+render();
+</script>
+</body>
+</html>

@@ -49,7 +49,10 @@ def test_a_remote_agent_plays_alongside_a_local_dummy() -> None:
     game.add_listener(recorder)
     game.register_player(A2APlayerFactory(client).create("agent-1"), Position(x=0, y=0))
     game.register_player(
-        DummyPlayerFactory(FixedRandomizer([3])).create("dummy-1"), Position(x=4, y=4)
+        DummyPlayerFactory(
+            FixedRandomizer([3]), FrozenClock(datetime(2025, 9, 10)), think_time=0.0
+        ).create("dummy-1"),
+        Position(x=4, y=4),
     )
 
     game.start(max_rounds=3)

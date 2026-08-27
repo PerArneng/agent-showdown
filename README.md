@@ -16,25 +16,27 @@ local one, and the game cannot tell the difference.
 
 ```bash
 uv sync
-uv run agent-showdown start
+uv run agent-showdown start          # http://127.0.0.1:8066, or --port
 ```
 
-Two dummy players, ten rounds, a 10x10 board:
+Open the page and press **Start game**. Two players appear in the sidebar with their own colors and
+step around a 10x10 grid, half a second at a time so the movement is watchable. The same game still
+logs to the terminal you started the server from:
 
 ```
+2026-08-27 INFO serving on http://127.0.0.1:8066
 2026-08-27 INFO started
 2026-08-27 INFO player dummy-1 joined at (0,0)
 2026-08-27 INFO player dummy-2 joined at (9,9)
 2026-08-27 INFO game started on a 10x10 board for 10 rounds
 2026-08-27 INFO round 1 started
 2026-08-27 INFO player dummy-1 blocked moving LEFT from (0,0)
-2026-08-27 INFO player dummy-2 blocked moving DOWN from (9,9)
-2026-08-27 INFO round 2 started
-2026-08-27 INFO player dummy-1 blocked moving UP_RIGHT from (0,0)
 2026-08-27 INFO player dummy-2 moved from (9,9) to (8,9)
 ```
 
-Only the level token is colored, and the moves differ every run — the players are random, and
+The browser sees the same events, because the terminal log and the browser are two `GameListener`s
+watching one game. Events reach the page over Server-Sent Events — the traffic is one-way, so a
+WebSocket would be more machinery for nothing. Moves differ every run: the players are random, and
 randomness is injected rather than reached for, so the tests are exact anyway.
 
 ## Agents as players
@@ -63,15 +65,17 @@ src/agent_showdown/
   interfaces/     Protocols and frozen Pydantic models. No behaviour, no imports from modules/.
   modules/        The implementations, under the same domain names.
   cli/            Typer frontend, and the only place the container is built.
+  web/            FastAPI frontend: three routes and one static page.
 tests/
   fakes/          In-memory doubles for everything that touches the outside world.
   unit/           Pure classes, no IO.
-  integration/    The engine end to end, plus a CLI smoke test.
+  integration/    The engine end to end, the web app, plus a CLI smoke test.
 ```
 
 Every module sits behind a `Protocol`, dependencies arrive through constructors, and the only code
 allowed to touch the clock, the terminal, the filesystem or the random number generator is the
-handful of edge modules. That is what lets the whole application — game included — run in memory.
+handful of edge modules. That is what lets the whole application — game included — run in memory:
+the web tests play complete games with no socket, no sleeping and no wall clock.
 
 The architecture is described in [`.claude/CLAUDE.md`](.claude/CLAUDE.md), and generalised as a
 reusable skill in [PerArneng/agent-skills](https://github.com/PerArneng/agent-skills).

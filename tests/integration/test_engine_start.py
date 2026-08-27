@@ -18,7 +18,11 @@ def _engine(console: InMemoryConsole, *extra_listeners: RecordingGameListener) -
         logger=logger,
         game_factory=DefaultGameFactory(),
         # RIGHT, then DOWN, over and over.
-        player_factory=DummyPlayerFactory(randomizer=FixedRandomizer([3, 1])),
+        player_factory=DummyPlayerFactory(
+            randomizer=FixedRandomizer([3, 1]),
+            clock=FrozenClock(datetime(2025, 9, 10)),
+            think_time=0.0,
+        ),
         game_listeners=[LogGameListener(logger), *extra_listeners],
     )
 
@@ -26,7 +30,7 @@ def _engine(console: InMemoryConsole, *extra_listeners: RecordingGameListener) -
 def test_start_plays_a_whole_game_entirely_in_memory() -> None:
     console = InMemoryConsole()
 
-    _engine(console).start()
+    _engine(console).start_game()
 
     # Players join at registration, which is why it precedes the game_started line.
     assert console.lines[:4] == [
@@ -46,7 +50,7 @@ def test_start_plays_a_whole_game_entirely_in_memory() -> None:
 def test_players_join_before_the_game_starts_moving_them() -> None:
     console = InMemoryConsole()
 
-    _engine(console).start()
+    _engine(console).start_game()
 
     first_move = next(i for i, line in enumerate(console.lines) if "moved" in line)
     last_join = max(i for i, line in enumerate(console.lines) if "joined" in line)
@@ -57,7 +61,7 @@ def test_every_registered_listener_sees_the_game() -> None:
     console = InMemoryConsole()
     recorder = RecordingGameListener()
 
-    _engine(console, recorder).start()
+    _engine(console, recorder).start_game()
 
     assert recorder.names()[:3] == ["player_joined", "player_joined", "game_started"]
     assert recorder.names().count("round_started") == 10

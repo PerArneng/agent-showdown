@@ -1,20 +1,29 @@
 # agent-showdown
 
-Python CLI managed with **uv**. Run it as `uv run agent-showdown <subcommand>`.
-Today there is one subcommand: `start`.
+Python app managed with **uv**. `uv run agent-showdown start` serves a web client on
+`--port` (default 8066); games are started from the browser.
 
 ## Architecture
 
 - A `Protocol` in front of every module. Depend on the Protocol, never on the class.
 - `interfaces/` holds Protocols and frozen Pydantic models only — no behaviour, and it never imports
   from `modules/` or `cli/`. `modules/` holds the implementations under the same domain names.
-- Domains today: `clock`, `console`, `file_system`, `randomizer`, `log`, `game`,
-  `agent_client`, `engine`. Read the real contracts in `src/agent_showdown/interfaces/`.
+- Domains today: `clock`, `console`, `file_system`, `randomizer`, `event_channel`, `log`,
+  `game`, `agent_client`, `engine`. Read the real contracts in
+  `src/agent_showdown/interfaces/`.
+- Two frontends, both thin adapters over `Engine`: `cli/` and `web/`. `cli/` builds the
+  container and hands the pieces to `web.create_app`; nothing else may import `Container`.
 - **One public class per file**, filename = class name in snake_case (`LocalFileSystem` →
   `local_file_system.py`).
 - **IO only in the edge modules**: `modules/clock`, `modules/console`, `modules/file_system`,
-  `modules/randomizer`. No `print()`, `open()`, `datetime.now()` or `random` anywhere else —
-  randomness is nondeterministic input, so it is confined exactly like the clock.
+  `modules/randomizer`, `modules/event_channel`. No `print()`, `open()`, `datetime.now()`,
+  `time.sleep()` or `random` anywhere else — randomness is nondeterministic input, so it is
+  confined exactly like the clock.
+- `Clock` owns the whole time edge: `now()` **and** `sleep()`. A pure class that wants to pause
+  asks the clock, so `FrozenClock` can record the pause and return instantly.
+- `event_channel` is an edge module for a different reason: it is where the thread playing the
+  game meets the threads serving HTTP. It is the only place outside `web/` allowed to own
+  queues, locks or blocking waits.
 - **Constructor injection only.** No globals, no module-level singletons, nothing constructing its
   own collaborators.
 - `Engine` is the facade. Every use case is a method on it; frontends are thin adapters with zero
@@ -70,7 +79,8 @@ Format is `{timestamp} {level} {message}`:
 player never sees the board — only its own `GameView`, handed to it once per turn.
 
 - **Register listeners before players.** `register_player` emits `player_joined` immediately, so a
-  listener added afterwards silently misses it. `Engine.start` relies on this ordering.
+  listener added afterwards silently misses it. `Engine.start_game` relies on this ordering,
+  which is also why the browser sees `player_joined` before `game_started`.
 - **`take_turn` is a trust boundary.** A `Player` may be a remote agent, so `DefaultGame` wraps the
   call in a broad `except Exception` — deliberate, not sloppy — and reports it as `turn_failed`
   instead of letting one contestant kill the game.
@@ -84,11 +94,39 @@ player never sees the board — only its own `GameView`, handed to it once per t
 - Every event carries a `Position`, never loose `x`/`y` pairs.
 - `turn_failed` logs at WARNING. Every other game event logs at INFO.
 - **`Player` is synchronous and stays that way.** A2A's JSON-RPC `SendMessage` blocks by default, so
-  a remote player needs no `async` — nothing forces it onto `Game`, `Engine` or the CLI.
+  a remote player needs no `async` — nothing forces it onto `Game`, `Engine` or the CLI. The web
+  frontend is the only async code, and it keeps the blocking game on a worker thread.
+- **`Engine.start_game` plays a game; `cli start` serves the UI.** Running a match is a use case on
+  the facade; serving is a frontend job. `start_game` refuses to run two games at once — two would
+  interleave their events into one stream of listeners.
+- **Every listener method has a matching frozen event model** in `interfaces/game/`, told apart by a
+  `Literal` `type` and collected in the `GameEvent` union. `ChannelGameListener` is the only
+  translator between the two. Adding a listener method means adding its event as well, and events
+  name a player with a **string** — the wire needs something serializable.
 - `modules/agent_client/` is intentionally empty. `A2APlayer` is a pure translator proven against a
   fake transport; the real HTTP client is not written yet. `A2APlayerFactory` uses the player name
   as the A2A `contextId` — a per-game unique id needs a `uuid`, which is nondeterministic input and
   would arrive as its own edge module.
+
+## The web client
+
+One page, `src/agent_showdown/web/static/index.html`: no build step, no framework, no CDN.
+
+- Served through the `file_system` edge module, not `StaticFiles`, so the no-`open()` rule
+  holds everywhere.
+- **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only
+  thing the browser sends.
+- `GET /api/events` is endless by design — one connection outlives many games. It polls the
+  channel with a timeout and emits `: ping` when idle, which is also how it notices the reader
+  is gone. Do not try to read it with `TestClient`; drive `stream_events` directly instead.
+- **The stream must watch `stopping()`**, or Ctrl-C hangs: uvicorn's graceful shutdown waits for
+  open connections, and an endless stream never closes one. `WebServer.stopping` exposes uvicorn's
+  own `should_exit` so the stream ends itself and the server exits without cancelling anything.
+  The graceful-shutdown timeout is only a backstop.
+- `POST /api/start` answers **202 before the game runs**, so a refused concurrent start still
+  answers 202. The refusal shows up as a log line, not a status code.
+- Players get a color by join order from a palette in the page. The board is a plain grid and a
+  player is a filled circle.
 
 ## Gotchas
 
@@ -97,18 +135,22 @@ player never sees the board — only its own `GameView`, handed to it once per t
   as a command group. Redundant once a second subcommand exists; harmless to leave.
 - **mypy**: `plugins = ["pydantic.mypy"]` is required, or `--strict` misses assignment to frozen
   model fields.
+- **`DummyPlayer` sleeps 500ms per turn** so a human can watch it move. Tests pass a
+  `FrozenClock` and `think_time=0.0`, so the suite stays instant — never let a real clock into
+  a test that plays a game.
 
 ## Commands
 
 ```
 uv sync                        # install
-uv run agent-showdown start    # run
+uv run agent-showdown start    # serve the web client on 8066
 uv run pytest                  # test
 uv run mypy src tests          # types
 uv run ruff check src tests    # lint
 ```
 
-Runtime deps: `typer`, `dependency-injector`, `pydantic`. Dev: `pytest`, `mypy`, `ruff`.
+Runtime deps: `typer`, `dependency-injector`, `pydantic`, `fastapi`, `uvicorn`.
+Dev: `pytest`, `mypy`, `ruff`, `httpx`.
 Python >= 3.11.
 
 ## Adding a feature

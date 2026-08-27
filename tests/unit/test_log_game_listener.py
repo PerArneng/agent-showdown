@@ -20,7 +20,7 @@ def _listener() -> tuple[LogGameListener, InMemoryConsole]:
 
 
 def _player() -> DummyPlayer:
-    return DummyPlayer("dummy-1", FixedRandomizer([0]))
+    return DummyPlayer("dummy-1", FixedRandomizer([0]), FrozenClock(datetime(2025, 9, 10)), 0.0)
 
 
 def test_every_event_logs_one_info_line() -> None:
