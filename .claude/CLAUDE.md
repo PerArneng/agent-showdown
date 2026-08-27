@@ -8,12 +8,13 @@ Today there is one subcommand: `start`.
 - A `Protocol` in front of every module. Depend on the Protocol, never on the class.
 - `interfaces/` holds Protocols and frozen Pydantic models only — no behaviour, and it never imports
   from `modules/` or `cli/`. `modules/` holds the implementations under the same domain names.
-- Domains today: `clock`, `console`, `file_system`, `log`, `engine`. Read the real contracts in
-  `src/agent_showdown/interfaces/`.
+- Domains today: `clock`, `console`, `file_system`, `randomizer`, `log`, `game`,
+  `agent_client`, `engine`. Read the real contracts in `src/agent_showdown/interfaces/`.
 - **One public class per file**, filename = class name in snake_case (`LocalFileSystem` →
   `local_file_system.py`).
-- **IO only in the edge modules**: `modules/clock`, `modules/console`, `modules/file_system`. No
-  `print()`, `open()` or `datetime.now()` anywhere else.
+- **IO only in the edge modules**: `modules/clock`, `modules/console`, `modules/file_system`,
+  `modules/randomizer`. No `print()`, `open()`, `datetime.now()` or `random` anywhere else —
+  randomness is nondeterministic input, so it is confined exactly like the clock.
 - **Constructor injection only.** No globals, no module-level singletons, nothing constructing its
   own collaborators.
 - `Engine` is the facade. Every use case is a method on it; frontends are thin adapters with zero
@@ -28,6 +29,10 @@ Today there is one subcommand: `start`.
 - Import from a sub-package, never from the leaf file:
   `from agent_showdown.interfaces.file_system import FileInfo, FileSystem`.
 - Models are `BaseModel` with `model_config = ConfigDict(frozen=True)`: data only, no behaviour.
+- One deliberate exception to "interfaces holds Protocols and frozen models only":
+  `AgentClientError` lives in `interfaces/agent_client/`. Callers must handle it, so it is part
+  of the contract, and putting it beside the implementation would force `modules/game` to
+  import `modules/agent_client` and break the one-way `modules → interfaces` direction.
 - Prefer stdlib types (`pathlib.Path`, `datetime`) over custom wrappers.
 - `cli/main.py` is the sole composition root — the only place `Container()` is instantiated. Tests
   construct classes directly with fakes, or use `container.<provider>.override(...)`.
