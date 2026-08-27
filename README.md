@@ -88,5 +88,5 @@ uv run mypy src tests          # types, --strict
 uv run ruff check src tests    # lint
 ```
 
-Python >= 3.11. Runtime deps are `typer`, `dependency-injector` and `pydantic`; everything else is
-development-only.
+Python >= 3.11. Runtime deps are `typer`, `dependency-injector`, `pydantic`, `fastapi` and
+`uvicorn`; everything else is development-only.

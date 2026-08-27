@@ -22,14 +22,17 @@ Python app managed with **uv**. `uv run agent-showdown start` serves a web clien
 - `Clock` owns the whole time edge: `now()` **and** `sleep()`. A pure class that wants to pause
   asks the clock, so `FrozenClock` can record the pause and return instantly.
 - `event_channel` is an edge module for a different reason: it is where the thread playing the
-  game meets the threads serving HTTP. It is the only place outside `web/` allowed to own
-  queues, locks or blocking waits.
+  game meets the threads serving HTTP, so it owns the queues and the blocking waits. Concurrency
+  lives in three places and nowhere else: here, in `web/`, and the one lock in `DefaultEngine`
+  that keeps two games from running at once.
 - **Constructor injection only.** No globals, no module-level singletons, nothing constructing its
   own collaborators.
 - `Engine` is the facade. Every use case is a method on it; frontends are thin adapters with zero
   logic, so a CLI and a web API are interchangeable.
 - `mypy --strict` clean, and everything is testable in memory.
-- Dependency direction, strictly one way: `cli → container → modules → interfaces`.
+- Dependency direction, strictly one way:
+  `cli → web → container → modules → interfaces`. `cli/` is the process entry point and the
+  composition root; `web/` receives what it needs and never reaches for the container.
 
 ## Conventions
 
@@ -143,7 +146,7 @@ One page, `src/agent_showdown/web/static/index.html`: no build step, no framewor
 
 ```
 uv sync                        # install
-uv run agent-showdown start    # serve the web client on 8066
+uv run agent-showdown start    # serve the web client on 8066 (--port to change)
 uv run pytest                  # test
 uv run mypy src tests          # types
 uv run ruff check src tests    # lint
@@ -161,6 +164,7 @@ Python >= 3.11.
 4. Re-export from both sub-package `__init__.py` files.
 5. Register it in `container.py`.
 6. Expose the capability as a method on `Engine` — not in the CLI.
-7. Add a thin Typer subcommand that only calls that method.
+7. Surface it in a frontend that only calls that method: a Typer subcommand, a route in
+   `web/app.py`, or both.
 8. Unit-test the pure class in memory; add an engine integration test using the fakes.
 9. Check no `print()`, `open()`, `datetime.now()` or `random` crept in outside the edge modules.
