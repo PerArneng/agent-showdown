@@ -25,7 +25,8 @@ Today there is one subcommand: `start`.
 ## Conventions
 
 - No `I` prefix on interfaces. Implementations carry a qualifying prefix: `Local…`, `System…`,
-  `Stdio…`, `Ansi…`, `Default…`, and `InMemory…`/`Frozen…` for the fakes in `tests/fakes/`.
+  `Stdio…`, `Ansi…`, `Default…`. Fakes in `tests/fakes/` say what they do:
+  `InMemory…`, `Frozen…`, `Fixed…`, `Recording…`, `Scripted…`.
 - Import from a sub-package, never from the leaf file:
   `from agent_showdown.interfaces.file_system import FileInfo, FileSystem`.
 - Models are `BaseModel` with `model_config = ConfigDict(frozen=True)`: data only, no behaviour.
@@ -63,6 +64,32 @@ Format is `{timestamp} {level} {message}`:
   terminal from a pure class.
 - The package is `log`, not `logging`, so it never reads as the stdlib module.
 
+## The game
+
+`Game` owns the rules, `Player` implementations are the contestants, `GameListener` observes. A
+player never sees the board — only its own `GameView`, handed to it once per turn.
+
+- **Register listeners before players.** `register_player` emits `player_joined` immediately, so a
+  listener added afterwards silently misses it. `Engine.start` relies on this ordering.
+- **`take_turn` is a trust boundary.** A `Player` may be a remote agent, so `DefaultGame` wraps the
+  call in a broad `except Exception` — deliberate, not sloppy — and reports it as `turn_failed`
+  instead of letting one contestant kill the game.
+- **`_MAX_MOVES_PER_TURN` caps a plan and rejects an over-long one *whole***, so nobody is given a
+  partial turn they did not ask for. The value is arbitrary; revisit it once real agents show what
+  plans actually look like.
+- **Players are keyed by object, not name** (`dict[Player, Position]`) — two contestants may share
+  a name.
+- `Direction` is a bare `StrEnum`. The deltas live in `DefaultGame`, because which way is "up" is a
+  rule of the board, not a property of the word. Do not add a `delta` property to the enum.
+- Every event carries a `Position`, never loose `x`/`y` pairs.
+- `turn_failed` logs at WARNING. Every other game event logs at INFO.
+- **`Player` is synchronous and stays that way.** A2A's JSON-RPC `SendMessage` blocks by default, so
+  a remote player needs no `async` — nothing forces it onto `Game`, `Engine` or the CLI.
+- `modules/agent_client/` is intentionally empty. `A2APlayer` is a pure translator proven against a
+  fake transport; the real HTTP client is not written yet. `A2APlayerFactory` uses the player name
+  as the A2A `contextId` — a per-game unique id needs a `uuid`, which is nondeterministic input and
+  would arrive as its own edge module.
+
 ## Gotchas
 
 - **Typer**: an app with a single `@app.command()` collapses into a bare command, so
@@ -94,4 +121,4 @@ Python >= 3.11.
 6. Expose the capability as a method on `Engine` — not in the CLI.
 7. Add a thin Typer subcommand that only calls that method.
 8. Unit-test the pure class in memory; add an engine integration test using the fakes.
-9. Check no `print()`, `open()` or `datetime.now()` crept in outside the edge modules.
+9. Check no `print()`, `open()`, `datetime.now()` or `random` crept in outside the edge modules.
