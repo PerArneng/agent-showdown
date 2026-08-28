@@ -43,11 +43,19 @@ watching one game. Events reach the page over Server-Sent Events — the traffic
 WebSocket would be more machinery for nothing. Moves differ every run: the players are random, and
 randomness is injected rather than reached for, so the tests are exact anyway.
 
+### The client dev loop
+
+Leave `npm --prefix web_client run dev` running in one terminal and `uv run agent-showdown start` in
+another. The server reads the build off disk on every request, so a browser reload is the whole
+loop — no restart. To work on the client with no Python at all, open
+`web_client/dist/index.html?demo` straight from disk and a recorded game replays.
+
 ## The web client
 
 [`web_client/`](web_client/README.md) is a freestanding TypeScript project built on the same
 architecture as the Python side — interfaces in front of modules, IO confined to edge modules,
-constructor injection, one composition root.
+constructor injection, one composition root. Its rules live in
+[`web_client/CLAUDE.md`](web_client/CLAUDE.md).
 
 It also runs with no Python at all: open `web_client/dist/index.html?demo` from disk and a recorded
 game replays. That is not a special case in the client, it is a second implementation of
@@ -98,11 +106,17 @@ reusable skill in [PerArneng/agent-skills](https://github.com/PerArneng/agent-sk
 
 ## Development
 
+Two projects, two sets of checks. Neither needs the other: the Python suite runs without npm, and
+the client's runs without a browser.
+
 ```bash
-uv run pytest                  # tests
-uv run mypy src tests          # types, --strict
-uv run ruff check src tests    # lint
+uv run pytest                        # tests
+uv run mypy src tests                # types, --strict
+uv run ruff check src tests          # lint
+
+npm --prefix web_client test         # tests, vitest
+npm --prefix web_client run check    # types, tsc --noEmit
 ```
 
 Python >= 3.11. Runtime deps are `typer`, `dependency-injector`, `pydantic`, `fastapi` and
-`uvicorn`; everything else is development-only.
+`uvicorn`; everything else is development-only, including all of the client's.

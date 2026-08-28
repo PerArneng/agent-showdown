@@ -33,22 +33,12 @@ chosen in `container.ts` and invisible to everything downstream:
 
 ## How it is built
 
-The same architecture as the Python side, translated:
+The same architecture as the Python side, translated: an interface in front of every module, IO
+confined to edge modules, constructor injection, one composition root, `strict` types. The payoff is
+`npm test` — the canvas and the DOM are interfaces, so the entire client, a whole recorded game end
+to end, is tested with no browser and no jsdom.
 
-- **An interface in front of every module.** `interfaces/` holds types only — no behaviour, and it
-  never imports from `modules/`. Implementations mirror it under the same domain names.
-- **IO only in the edge modules.** Nothing outside `modules/canvas`, `modules/dom`,
-  `modules/event_stream`, `modules/game_api` and `modules/clock` may touch `document`, `fetch`,
-  `EventSource`, `setTimeout` or `Math.random`. This is greppable, and worth grepping for.
-- **Constructor injection only.** No globals, no singletons, nothing building its own collaborators.
-  `container.ts` is the only place an implementation is named.
-- **One public class per file**, filename = class name in kebab-case.
-- **State is a value.** `ClientState` is `readonly` throughout and `DefaultStateReducer` returns a
-  new one every time, so nothing on screen can drift from what the server said.
-- `tsc --noEmit` clean under `strict`.
-
-The payoff is `npm test`: the canvas and the DOM are interfaces, so the entire client — a whole
-recorded game, end to end — is tested with no browser and no jsdom.
+The rules themselves live in [`CLAUDE.md`](CLAUDE.md), so there is one place to change them.
 
 ## Layout
 

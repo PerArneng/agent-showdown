@@ -2,7 +2,7 @@
 
 Python app managed with **uv**. `uv run agent-showdown start` serves the web client on
 `--port` (default 8066); games are started from the browser. The client is a separate
-TypeScript project in `web_client/` and **must be built first** — see its own `README.md`.
+TypeScript project in `web_client/` and **must be built first** — it has its own `CLAUDE.md`.
 
 ## Architecture
 
@@ -14,7 +14,8 @@ TypeScript project in `web_client/` and **must be built first** — see its own 
   `src/agent_showdown/interfaces/`.
 - Two frontends, both thin adapters over `Engine`: `cli/` and `web/`. `cli/` builds the
   container and hands the pieces to `web.create_app`; nothing else may import `Container`.
-  `web_client/` is a third, in TypeScript, over the HTTP the `web/` frontend exposes.
+  `web_client/` is a third, in TypeScript, over the HTTP the `web/` frontend exposes. It is a
+  separate project governed by `web_client/CLAUDE.md`.
 - **One public class per file**, filename = class name in snake_case (`LocalFileSystem` →
   `local_file_system.py`).
 - **IO only in the edge modules**: `modules/clock`, `modules/console`, `modules/file_system`,
@@ -113,21 +114,20 @@ player never sees the board — only its own `GameView`, handed to it once per t
   as the A2A `contextId` — a per-game unique id needs a `uuid`, which is nondeterministic input and
   would arrive as its own edge module.
 
-## The web client
+## Serving the web client
 
-`web_client/` is a **separate project with its own toolchain** — npm, Vite, TypeScript, vitest — and
-its own `README.md`, which is the authority on it. It follows the same architecture as the Python
-side: interfaces in front of modules, IO only in edge modules (`canvas`, `dom`, `event_stream`,
-`game_api`, `clock`), constructor injection, `container.ts` as the sole composition root, one public
-class per file in kebab-case. Its tests use fakes and need no browser.
+The client is a **separate project** in `web_client/`, with its own toolchain and its own
+`CLAUDE.md` — read that before touching anything under it. This section is only the seam: how the
+Python side finds and serves what that project builds.
 
-- **It must be built before the server can serve it.** `find_client_dir` prefers
-  `web_client/dist` over the packaged copy, so `npm run dev` plus a browser reload is the whole loop
-  with no restart. `--client-dir` overrides the search and is validated the same way.
+- **It must be built before the server can serve it.** `find_client_dir` prefers `web_client/dist`
+  over the packaged copy, so `npm run dev` plus a browser reload is the whole loop with no restart.
+  `--client-dir` overrides the search and is validated the same way, so a wrong path fails like an
+  unbuilt one.
 - **The Python test suite must never need npm.** `InMemoryFileSystem` supplies a fake `dist/`.
 - Served through the `file_system` edge module, not `StaticFiles`, so the no-`open()` rule holds.
-  `web/assets.py` decides what may be served: a plain file name with a known extension, else 404
-  without touching the disk.
+  `web/assets.py` decides what may be served at all: a plain file name with a known extension, else
+  404 without touching the disk.
 - **Text only.** `FileSystem` has no `read_bytes` and the build has no binary assets. If one
   appears, add `read_bytes` — do not reach for `open()`.
 - **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only thing
@@ -141,8 +141,8 @@ class per file in kebab-case. Its tests use fakes and need no browser.
   The graceful-shutdown timeout is only a backstop.
 - `POST /api/start` answers **202 before the game runs**, so a refused concurrent start still
   answers 202. The refusal shows up as a log line, not a status code.
-- **Event models must stay in step** with `src/interfaces/game/game-event.ts`. Adding a listener
-  method means adding the Python event, the TypeScript variant, and a fixture that still parses.
+- **Events must stay in step across the two projects.** A new `GameListener` method needs its
+  Python event model *and* the matching variant in `web_client/src/interfaces/game/game-event.ts`.
 
 ## Gotchas
 
@@ -159,11 +159,20 @@ class per file in kebab-case. Its tests use fakes and need no browser.
 
 ```
 uv sync                        # install
-uv run agent-showdown start    # serve the web client on 8066 (--port to change)
-npm --prefix web_client run build   # required before the server has anything to serve
 uv run pytest                  # test
 uv run mypy src tests          # types
 uv run ruff check src tests    # lint
+uv run agent-showdown start    # serve on 8066 (--port, --client-dir)
+```
+
+The client is built separately, and the server has nothing to serve until it is:
+
+```
+npm --prefix web_client install
+npm --prefix web_client run build   # required before `start` works
+npm --prefix web_client run dev     # rebuild on save while working on the client
+npm --prefix web_client test        # vitest, no browser
+npm --prefix web_client run check   # tsc --noEmit
 ```
 
 Runtime deps: `typer`, `dependency-injector`, `pydantic`, `fastapi`, `uvicorn`.
