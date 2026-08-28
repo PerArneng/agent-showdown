@@ -7,7 +7,7 @@ tests, and a demo mode that runs with no Python at all.
 
 ```bash
 npm install
-npm run build     # -> dist/, which the Python server serves
+npm run build     # -> dist/index.html, one self-contained file, which the server serves
 npm run dev       # rebuild on every change; reload the browser
 npm test          # vitest, no browser involved
 npm run check     # tsc --noEmit, strict
@@ -19,9 +19,10 @@ npm run check     # tsc --noEmit, strict
 <http://127.0.0.1:8066>. The server prefers `web_client/dist` over its packaged copy, so
 `npm run dev` in one terminal and a browser reload is the whole loop — no restart.
 
-**With no server at all.** Open `dist/index.html?demo` straight from disk. A recorded game replays
-from `fixtures/demo-game.json`, which is bundled into the JavaScript rather than fetched, because
-`fetch` is blocked on `file://`.
+**With no server at all.** Open `dist/index.html?demo` straight from disk — double-clicking it is
+enough. A recorded game replays from `fixtures/demo-game.json`, which is bundled into the
+JavaScript rather than fetched, because `fetch` is blocked on `file://`. The build is a single
+inlined file for the same reason: browsers will not load a module script from `file://` either.
 
 Demo mode is not a special case in the client. It is a different `EventStream` implementation,
 chosen in `container.ts` and invisible to everything downstream:

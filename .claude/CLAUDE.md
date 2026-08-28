@@ -125,11 +125,12 @@ Python side finds and serves what that project builds.
   `--client-dir` overrides the search and is validated the same way, so a wrong path fails like an
   unbuilt one.
 - **The Python test suite must never need npm.** `InMemoryFileSystem` supplies a fake `dist/`.
+- **The client builds to a single self-contained `index.html`**, so `GET /` is the only route that
+  serves it — there is no static-asset handling to get wrong. That is not a packaging preference:
+  browsers refuse to load module scripts from a `file://` origin, so a multi-file build cannot be
+  opened from disk, and demo mode depends on exactly that.
 - Served through the `file_system` edge module, not `StaticFiles`, so the no-`open()` rule holds.
-  `web/assets.py` decides what may be served at all: a plain file name with a known extension, else
-  404 without touching the disk.
-- **Text only.** `FileSystem` has no `read_bytes` and the build has no binary assets. If one
-  appears, add `read_bytes` — do not reach for `open()`.
+  It is read per request, which is why `npm run dev` needs no server restart.
 - **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only thing
   the browser sends.
 - `GET /api/events` is endless by design — one connection outlives many games. It polls the

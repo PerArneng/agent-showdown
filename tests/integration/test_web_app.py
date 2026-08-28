@@ -34,7 +34,6 @@ from tests.fakes import (
 
 _CLIENT_DIR = Path("/app/dist")
 _PAGE = "<!doctype html><title>agent-showdown</title><canvas id='board'></canvas>"
-_SCRIPT = "console.log('agent-showdown');"
 _POLL = 0.5
 
 
@@ -61,7 +60,6 @@ class Fixture:
         self.stopping = False
         self.file_system = file_system = InMemoryFileSystem()
         file_system.write_text(_CLIENT_DIR / "index.html", _PAGE)
-        file_system.write_text(_CLIENT_DIR / "assets" / "index-abc123.js", _SCRIPT)
         self.engine = self.build_engine([ChannelGameListener(self.channel)])
         self.client = TestClient(
             create_app(
@@ -111,34 +109,6 @@ def test_the_index_is_served_from_the_file_system(app: Fixture) -> None:
     assert response.status_code == 200
     assert response.text == _PAGE
     assert "text/html" in response.headers["content-type"]
-
-
-def test_an_asset_is_served_with_its_content_type(app: Fixture) -> None:
-    response = app.client.get("/assets/index-abc123.js")
-
-    assert response.status_code == 200
-    assert response.text == _SCRIPT
-    assert response.headers["content-type"].startswith("text/javascript")
-
-
-def test_an_unknown_asset_is_a_404(app: Fixture) -> None:
-    assert app.client.get("/assets/missing.js").status_code == 404
-
-
-def test_an_asset_with_a_refused_extension_is_a_404(app: Fixture) -> None:
-    app.file_system.write_text(_CLIENT_DIR / "assets" / "secrets.env", "TOKEN=hunter2")
-
-    assert app.client.get("/assets/secrets.env").status_code == 404
-
-
-def test_an_asset_name_cannot_climb_out_of_the_directory(app: Fixture) -> None:
-    app.file_system.write_text(Path("/app/secret.js"), "nope")
-
-    # httpx normalises "..", so the traversal is spelled the way a raw client would send it.
-    response = app.client.get("/assets/..%2F..%2Fsecret.js")
-
-    assert response.status_code == 404
-    assert "nope" not in response.text
 
 
 def test_start_is_accepted_and_plays_a_whole_game(app: Fixture) -> None:

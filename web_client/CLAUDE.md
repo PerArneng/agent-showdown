@@ -82,8 +82,11 @@ Dev dependencies only: `vite`, `typescript`, `vitest`, `prettier`.
 
 ## Gotchas
 
-- **`vite.config.ts` must keep `base: "./"`.** Vite defaults to absolute `/assets/…` URLs, which
-  break when `dist/index.html` is opened from disk — and that is exactly what demo mode is for.
+- **The build must stay single-file.** `vite-plugin-singlefile` inlines the JavaScript and CSS into
+  `dist/index.html`, and `base: "./"` keeps what is left relative. Both are load-bearing: browsers
+  refuse to load module scripts and stylesheets from a `file://` origin, so a multi-file build opens
+  from disk as unstyled HTML with a blank canvas. Verified with a headless screenshot, not by
+  reading the build output — the file names all looked right while the page was broken.
 - **The fixture is imported, not fetched**, for the same reason: `fetch` is blocked on `file://`.
   Importing bundles it into the JavaScript, so `?demo` works with no server at all.
 - **Demo mode is not a branch in the client.** `?demo` swaps `SseEventStream` for
