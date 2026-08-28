@@ -31,7 +31,6 @@ class Fixture {
       this.statusText,
       this.startButton
     );
-    this.startButton.onClick(() => this.engine.startGame());
   }
 }
 

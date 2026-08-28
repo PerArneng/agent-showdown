@@ -24,6 +24,7 @@ export class DefaultEngine implements Engine {
   }
 
   connect(): void {
+    this.startButton.onClick(() => this.startGame());
     this.show(this.state);
     this.stream.subscribe((event) => this.handle(event));
   }
