@@ -5,7 +5,7 @@ import type { Position } from "../../interfaces/game/index.js";
 export class Html5Canvas implements Canvas {
   constructor(
     private readonly element: HTMLCanvasElement,
-    private readonly context: CanvasRenderingContext2D
+    private readonly context: CanvasRenderingContext2D,
   ) {}
 
   get width(): number {

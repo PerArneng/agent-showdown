@@ -3,7 +3,12 @@ import type { Position } from "../../src/interfaces/game/index.js";
 
 export type DrawCall =
   | { readonly kind: "clear" }
-  | { readonly kind: "line"; readonly from: Position; readonly to: Position; readonly color: string }
+  | {
+      readonly kind: "line";
+      readonly from: Position;
+      readonly to: Position;
+      readonly color: string;
+    }
   | {
       readonly kind: "circle";
       readonly centre: Position;
@@ -17,7 +22,7 @@ export class RecordingCanvas implements Canvas {
 
   constructor(
     readonly width = 100,
-    readonly height = 100
+    readonly height = 100,
   ) {}
 
   clear(): void {

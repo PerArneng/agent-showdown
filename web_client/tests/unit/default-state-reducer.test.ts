@@ -29,7 +29,7 @@ describe("DefaultStateReducer", () => {
     const state = after(
       empty,
       { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
-      { type: "player_joined", player: "two", position: { x: 9, y: 9 } }
+      { type: "player_joined", player: "two", position: { x: 9, y: 9 } },
     );
 
     expect(state.players.map((player) => player.name)).toEqual(["one", "two"]);
@@ -40,7 +40,7 @@ describe("DefaultStateReducer", () => {
     const joined = after(
       empty,
       { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
-      { type: "player_joined", player: "two", position: { x: 9, y: 9 } }
+      { type: "player_joined", player: "two", position: { x: 9, y: 9 } },
     );
 
     const state = after(joined, {
@@ -71,13 +71,13 @@ describe("DefaultStateReducer", () => {
     const joined = after(
       empty,
       { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
-      { type: "player_joined", player: "two", position: { x: 9, y: 9 } }
+      { type: "player_joined", player: "two", position: { x: 9, y: 9 } },
     );
 
     const state = after(
       joined,
       { type: "player_reasoned", player: "one", reasoning: "first thought" },
-      { type: "player_reasoned", player: "one", reasoning: "second thought" }
+      { type: "player_reasoned", player: "one", reasoning: "second thought" },
     );
 
     expect(state.players[0]?.reasoning).toBe("second thought");

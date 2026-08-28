@@ -12,21 +12,31 @@ export class FixtureEventStream implements EventStream {
   constructor(
     private readonly events: readonly GameEvent[],
     private readonly clock: Clock,
-    private readonly delayMilliseconds: number
+    private readonly delayMilliseconds: number,
   ) {}
 
-  subscribe(onEvent: (event: GameEvent) => void): Subscription {
+  subscribe(
+    onEvent: (event: GameEvent) => void,
+    onConnectionChange?: (connected: boolean) => void,
+  ): Subscription {
     let open = true;
     // Start after the caller has its subscription back. A real stream never delivers an event
     // from inside `subscribe`, and code downstream should not have to cope with one that does.
-    void Promise.resolve().then(() => this.replay(onEvent, () => open));
-    return { close: () => void (open = false) };
+    void Promise.resolve().then(() => {
+      if (open) {
+        onConnectionChange?.(true);
+        void this.replay(onEvent, () => open);
+      }
+    });
+    return {
+      close: () => {
+        open = false;
+        onConnectionChange?.(false);
+      },
+    };
   }
 
-  private async replay(
-    onEvent: (event: GameEvent) => void,
-    isOpen: () => boolean
-  ): Promise<void> {
+  private async replay(onEvent: (event: GameEvent) => void, isOpen: () => boolean): Promise<void> {
     for (const event of this.events) {
       if (!isOpen()) {
         return;

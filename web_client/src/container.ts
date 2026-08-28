@@ -5,7 +5,12 @@ import type { GameEvent } from "./interfaces/game/index.js";
 import type { GameApi } from "./interfaces/game_api/index.js";
 import { Html5Canvas } from "./modules/canvas/index.js";
 import { SystemClock } from "./modules/clock/index.js";
-import { ElementPlayerList, ElementStartButton, ElementStatusText } from "./modules/dom/index.js";
+import {
+  ElementConnectionIndicator,
+  ElementPlayerList,
+  ElementStartButton,
+  ElementStatusText,
+} from "./modules/dom/index.js";
 import { DefaultEngine } from "./modules/engine/index.js";
 import { FixtureEventStream, SseEventStream } from "./modules/event_stream/index.js";
 import { BoardRenderer, DefaultStateReducer, Palette } from "./modules/game/index.js";
@@ -21,6 +26,7 @@ export interface Elements {
   readonly playerList: HTMLElement;
   readonly statusText: HTMLElement;
   readonly startButton: HTMLButtonElement;
+  readonly connectionIndicator: HTMLElement;
   readonly document: Document;
 }
 
@@ -42,6 +48,7 @@ export function createEngine(elements: Elements, demo: boolean): Engine {
     new BoardRenderer(new Html5Canvas(elements.canvas, elements.context)),
     new ElementPlayerList(elements.playerList, elements.document),
     new ElementStatusText(elements.statusText),
-    new ElementStartButton(elements.startButton)
+    new ElementStartButton(elements.startButton),
+    new ElementConnectionIndicator(elements.connectionIndicator),
   );
 }

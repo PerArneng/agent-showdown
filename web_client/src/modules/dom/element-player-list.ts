@@ -5,12 +5,12 @@ import type { PlayerState } from "../../interfaces/game/index.js";
 export class ElementPlayerList implements PlayerList {
   constructor(
     private readonly element: HTMLElement,
-    private readonly document: Document
+    private readonly document: Document,
   ) {}
 
   show(players: readonly PlayerState[]): void {
     this.element.replaceChildren(
-      ...(players.length === 0 ? [this.empty()] : players.map((player) => this.row(player)))
+      ...(players.length === 0 ? [this.empty()] : players.map((player) => this.row(player))),
     );
   }
 

@@ -22,7 +22,7 @@ export class BoardRenderer implements Renderer {
           y: (player.position.y + 0.5) * cell.y,
         },
         Math.min(cell.x, cell.y) * PLAYER_RADIUS_RATIO,
-        player.color
+        player.color,
       );
     }
   }

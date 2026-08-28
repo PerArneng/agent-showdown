@@ -4,6 +4,7 @@ import type { GameEvent } from "../../src/interfaces/game/index.js";
 import { DefaultEngine } from "../../src/modules/engine/index.js";
 import { BoardRenderer, DefaultStateReducer, Palette } from "../../src/modules/game/index.js";
 import {
+  InMemoryConnectionIndicator,
   InMemoryPlayerList,
   InMemoryStartButton,
   InMemoryStatusText,
@@ -19,6 +20,7 @@ class Fixture {
   readonly playerList = new InMemoryPlayerList();
   readonly statusText = new InMemoryStatusText();
   readonly startButton = new InMemoryStartButton();
+  readonly connectionIndicator = new InMemoryConnectionIndicator();
   readonly engine: DefaultEngine;
 
   constructor(readonly stream: ScriptedEventStream) {
@@ -29,7 +31,8 @@ class Fixture {
       new BoardRenderer(this.canvas),
       this.playerList,
       this.statusText,
-      this.startButton
+      this.startButton,
+      this.connectionIndicator,
     );
   }
 }
@@ -70,7 +73,7 @@ describe("DefaultEngine", () => {
 
     // One clear on connect for the empty state, then one per event.
     expect(fixture.canvas.calls.filter((call) => call.kind === "clear")).toHaveLength(
-      recorded.length + 1
+      recorded.length + 1,
     );
   });
 
@@ -105,5 +108,19 @@ describe("DefaultEngine", () => {
 
     expect(fixture.playerList.names()).toEqual([]);
     expect(fixture.statusText.last()).toBe("Waiting.");
+  });
+
+  it("updates connection status indicator when stream connects and disconnects", () => {
+    const stream = new ScriptedEventStream();
+    const fixture = new Fixture(stream);
+
+    fixture.engine.connect();
+    expect(fixture.connectionIndicator.last()).toBe(true);
+
+    stream.setConnected(false);
+    expect(fixture.connectionIndicator.last()).toBe(false);
+
+    stream.setConnected(true);
+    expect(fixture.connectionIndicator.last()).toBe(true);
   });
 });

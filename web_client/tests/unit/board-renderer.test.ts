@@ -38,7 +38,7 @@ describe("BoardRenderer", () => {
       state({
         board: { width: 10, height: 10 },
         players: [{ name: "one", position: { x: 0, y: 0 }, color: "#fff", reasoning: "" }],
-      })
+      }),
     );
 
     expect(canvas.circles()).toEqual([
@@ -53,7 +53,7 @@ describe("BoardRenderer", () => {
       state({
         board: { width: 10, height: 10 },
         players: [{ name: "one", position: { x: 1, y: 1 }, color: "#fff", reasoning: "" }],
-      })
+      }),
     );
 
     expect(canvas.circles()[0]).toMatchObject({ centre: { x: 15, y: 7.5 } });

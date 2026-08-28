@@ -27,10 +27,10 @@ inlined file for the same reason: browsers will not load a module script from `f
 Demo mode is not a special case in the client. It is a different `EventStream` implementation,
 chosen in `container.ts` and invisible to everything downstream:
 
-| | live | `?demo` |
-|---|---|---|
+|               | live             | `?demo`              |
+| ------------- | ---------------- | -------------------- |
 | `EventStream` | `SseEventStream` | `FixtureEventStream` |
-| `GameApi` | `HttpGameApi` | `OfflineGameApi` |
+| `GameApi`     | `HttpGameApi`    | `OfflineGameApi`     |
 
 ## How it is built
 

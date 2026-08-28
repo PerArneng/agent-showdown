@@ -5,11 +5,25 @@ import type { GameEvent } from "../../interfaces/game/index.js";
 export class SseEventStream implements EventStream {
   constructor(private readonly url: string) {}
 
-  subscribe(onEvent: (event: GameEvent) => void): Subscription {
+  subscribe(
+    onEvent: (event: GameEvent) => void,
+    onConnectionChange?: (connected: boolean) => void,
+  ): Subscription {
     const source = new EventSource(this.url);
+    source.onopen = () => {
+      onConnectionChange?.(true);
+    };
+    source.onerror = () => {
+      onConnectionChange?.(false);
+    };
     source.onmessage = (message: MessageEvent<string>) => {
       onEvent(JSON.parse(message.data) as GameEvent);
     };
-    return { close: () => source.close() };
+    return {
+      close: () => {
+        source.close();
+        onConnectionChange?.(false);
+      },
+    };
   }
 }

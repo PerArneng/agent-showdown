@@ -7,5 +7,8 @@ import type { Subscription } from "./subscription.js";
  * This is the seam demo mode turns on — a recorded game is just a different implementation.
  */
 export interface EventStream {
-  subscribe(onEvent: (event: GameEvent) => void): Subscription;
+  subscribe(
+    onEvent: (event: GameEvent) => void,
+    onConnectionChange?: (connected: boolean) => void,
+  ): Subscription;
 }

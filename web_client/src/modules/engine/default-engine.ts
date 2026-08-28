@@ -1,7 +1,17 @@
-import type { PlayerList, StartButton, StatusText } from "../../interfaces/dom/index.js";
+import type {
+  ConnectionIndicator,
+  PlayerList,
+  StartButton,
+  StatusText,
+} from "../../interfaces/dom/index.js";
 import type { Engine } from "../../interfaces/engine/index.js";
 import type { EventStream } from "../../interfaces/event_stream/index.js";
-import type { ClientState, GameEvent, Renderer, StateReducer } from "../../interfaces/game/index.js";
+import type {
+  ClientState,
+  GameEvent,
+  Renderer,
+  StateReducer,
+} from "../../interfaces/game/index.js";
 import type { GameApi } from "../../interfaces/game_api/index.js";
 
 /**
@@ -18,7 +28,8 @@ export class DefaultEngine implements Engine {
     private readonly renderer: Renderer,
     private readonly playerList: PlayerList,
     private readonly statusText: StatusText,
-    private readonly startButton: StartButton
+    private readonly startButton: StartButton,
+    private readonly connectionIndicator: ConnectionIndicator,
   ) {
     this.state = reducer.initial();
   }
@@ -26,7 +37,11 @@ export class DefaultEngine implements Engine {
   connect(): void {
     this.startButton.onClick(() => this.startGame());
     this.show(this.state);
-    this.stream.subscribe((event) => this.handle(event));
+    this.connectionIndicator.show(false);
+    this.stream.subscribe(
+      (event) => this.handle(event),
+      (connected) => this.connectionIndicator.show(connected),
+    );
   }
 
   startGame(): void {

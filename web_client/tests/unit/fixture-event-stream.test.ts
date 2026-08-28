@@ -40,4 +40,20 @@ describe("FixtureEventStream", () => {
 
     expect(seen).toHaveLength(1);
   });
+
+  it("notifies connection state changes", async () => {
+    const clock = new FrozenClock();
+    const connectionStates: boolean[] = [];
+
+    const subscription = new FixtureEventStream(EVENTS, clock, 250).subscribe(
+      () => {},
+      (connected) => connectionStates.push(connected),
+    );
+    await clock.settled();
+
+    expect(connectionStates).toEqual([true]);
+
+    subscription.close();
+    expect(connectionStates).toEqual([true, false]);
+  });
 });

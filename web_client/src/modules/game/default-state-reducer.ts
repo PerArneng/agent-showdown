@@ -1,4 +1,10 @@
-import type { ClientState, GameEvent, PlayerState, Position, StateReducer } from "../../interfaces/game/index.js";
+import type {
+  ClientState,
+  GameEvent,
+  PlayerState,
+  Position,
+  StateReducer,
+} from "../../interfaces/game/index.js";
 import type { Palette } from "./palette.js";
 
 /**
@@ -56,9 +62,7 @@ export class DefaultStateReducer implements StateReducer {
         { name, position, color: this.palette.colorFor(state.players.length), reasoning: "" },
       ];
     }
-    return state.players.map((player) =>
-      player.name === name ? { ...player, position } : player
-    );
+    return state.players.map((player) => (player.name === name ? { ...player, position } : player));
   }
 
   private reasoned(state: ClientState, name: string, reasoning: string): readonly PlayerState[] {
@@ -75,7 +79,7 @@ export class DefaultStateReducer implements StateReducer {
       ];
     }
     return state.players.map((player) =>
-      player.name === name ? { ...player, reasoning } : player
+      player.name === name ? { ...player, reasoning } : player,
     );
   }
 }
