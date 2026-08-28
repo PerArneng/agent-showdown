@@ -8,6 +8,7 @@ export type DrawCall =
       readonly from: Position;
       readonly to: Position;
       readonly color: string;
+      readonly lineWidth?: number;
     }
   | {
       readonly kind: "circle";
@@ -20,6 +21,24 @@ export type DrawCall =
       readonly sprite: number;
       readonly centre: Position;
       readonly size: number;
+    }
+  | {
+      readonly kind: "polygon";
+      readonly points: readonly Position[];
+      readonly color: string;
+    }
+  | {
+      readonly kind: "strokePolygon";
+      readonly points: readonly Position[];
+      readonly color: string;
+      readonly lineWidth?: number;
+    }
+  | {
+      readonly kind: "ellipse";
+      readonly centre: Position;
+      readonly radiusX: number;
+      readonly radiusY: number;
+      readonly color: string;
     };
 
 /** Test fake. Records what it was asked to draw instead of drawing it. */
@@ -35,8 +54,8 @@ export class RecordingCanvas implements Canvas {
     this.calls.push({ kind: "clear" });
   }
 
-  strokeLine(from: Position, to: Position, color: string): void {
-    this.calls.push({ kind: "line", from, to, color });
+  strokeLine(from: Position, to: Position, color: string, lineWidth = 1): void {
+    this.calls.push({ kind: "line", from, to, color, lineWidth });
   }
 
   fillCircle(centre: Position, radius: number, color: string): void {
@@ -47,11 +66,51 @@ export class RecordingCanvas implements Canvas {
     this.calls.push({ kind: "sprite", sprite, centre, size });
   }
 
-  circles(): readonly DrawCall[] {
-    return this.calls.filter((call) => call.kind === "circle");
+  fillPolygon(points: readonly Position[], color: string): void {
+    this.calls.push({ kind: "polygon", points, color });
   }
 
-  sprites(): readonly DrawCall[] {
-    return this.calls.filter((call) => call.kind === "sprite");
+  strokePolygon(points: readonly Position[], color: string, lineWidth = 1): void {
+    this.calls.push({ kind: "strokePolygon", points, color, lineWidth });
+  }
+
+  fillEllipse(centre: Position, radiusX: number, radiusY: number, color: string): void {
+    this.calls.push({ kind: "ellipse", centre, radiusX, radiusY, color });
+  }
+
+  lines(): readonly Extract<DrawCall, { kind: "line" }>[] {
+    return this.calls.filter(
+      (call): call is Extract<DrawCall, { kind: "line" }> => call.kind === "line",
+    );
+  }
+
+  circles(): readonly Extract<DrawCall, { kind: "circle" }>[] {
+    return this.calls.filter(
+      (call): call is Extract<DrawCall, { kind: "circle" }> => call.kind === "circle",
+    );
+  }
+
+  sprites(): readonly Extract<DrawCall, { kind: "sprite" }>[] {
+    return this.calls.filter(
+      (call): call is Extract<DrawCall, { kind: "sprite" }> => call.kind === "sprite",
+    );
+  }
+
+  polygons(): readonly Extract<DrawCall, { kind: "polygon" }>[] {
+    return this.calls.filter(
+      (call): call is Extract<DrawCall, { kind: "polygon" }> => call.kind === "polygon",
+    );
+  }
+
+  strokePolygons(): readonly Extract<DrawCall, { kind: "strokePolygon" }>[] {
+    return this.calls.filter(
+      (call): call is Extract<DrawCall, { kind: "strokePolygon" }> => call.kind === "strokePolygon",
+    );
+  }
+
+  ellipses(): readonly Extract<DrawCall, { kind: "ellipse" }>[] {
+    return this.calls.filter(
+      (call): call is Extract<DrawCall, { kind: "ellipse" }> => call.kind === "ellipse",
+    );
   }
 }

@@ -29,9 +29,9 @@ export class Html5Canvas implements Canvas {
     this.context.clearRect(0, 0, this.width, this.height);
   }
 
-  strokeLine(from: Position, to: Position, color: string): void {
+  strokeLine(from: Position, to: Position, color: string, lineWidth = 1): void {
     this.context.strokeStyle = color;
-    this.context.lineWidth = 1;
+    this.context.lineWidth = lineWidth;
     this.context.beginPath();
     // Half-pixel offset, or a 1px line straddles two device pixels and blurs.
     this.context.moveTo(Math.round(from.x) + 0.5, Math.round(from.y) + 0.5);
@@ -54,5 +54,55 @@ export class Html5Canvas implements Canvas {
     }
     const half = size / 2;
     this.context.drawImage(img, centre.x - half, centre.y - half, size, size);
+  }
+
+  fillPolygon(points: readonly Position[], color: string): void {
+    if (points.length === 0) {
+      return;
+    }
+    this.context.fillStyle = color;
+    this.context.beginPath();
+    const first = points[0];
+    if (first === undefined) {
+      return;
+    }
+    this.context.moveTo(first.x, first.y);
+    for (let i = 1; i < points.length; i++) {
+      const pt = points[i];
+      if (pt !== undefined) {
+        this.context.lineTo(pt.x, pt.y);
+      }
+    }
+    this.context.closePath();
+    this.context.fill();
+  }
+
+  strokePolygon(points: readonly Position[], color: string, lineWidth = 1): void {
+    if (points.length === 0) {
+      return;
+    }
+    this.context.strokeStyle = color;
+    this.context.lineWidth = lineWidth;
+    this.context.beginPath();
+    const first = points[0];
+    if (first === undefined) {
+      return;
+    }
+    this.context.moveTo(first.x, first.y);
+    for (let i = 1; i < points.length; i++) {
+      const pt = points[i];
+      if (pt !== undefined) {
+        this.context.lineTo(pt.x, pt.y);
+      }
+    }
+    this.context.closePath();
+    this.context.stroke();
+  }
+
+  fillEllipse(centre: Position, radiusX: number, radiusY: number, color: string): void {
+    this.context.fillStyle = color;
+    this.context.beginPath();
+    this.context.ellipse(centre.x, centre.y, radiusX, radiusY, 0, 0, Math.PI * 2);
+    this.context.fill();
   }
 }

@@ -10,7 +10,10 @@ export interface Canvas {
   readonly width: number;
   readonly height: number;
   clear(): void;
-  strokeLine(from: Position, to: Position, color: string): void;
+  strokeLine(from: Position, to: Position, color: string, lineWidth?: number): void;
   fillCircle(centre: Position, radius: number, color: string): void;
   drawSprite(sprite: number, centre: Position, size: number): void;
+  fillPolygon(points: readonly Position[], color: string): void;
+  strokePolygon(points: readonly Position[], color: string, lineWidth?: number): void;
+  fillEllipse(centre: Position, radiusX: number, radiusY: number, color: string): void;
 }
