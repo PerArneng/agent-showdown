@@ -1,17 +1,17 @@
 import type { Canvas } from "../../interfaces/canvas/index.js";
 import type { Board, ClientState, Position, Renderer } from "../../interfaces/game/index.js";
 
-const TILE_COLOR_EVEN = "#1d222c";
-const TILE_COLOR_ODD = "#242b38";
-const GRID_BORDER_COLOR = "#323c4e";
-const BOARD_OUTLINE_COLOR = "#45526b";
+const TILE_COLOR_EVEN = "#4cae4f";
+const TILE_COLOR_ODD = "#3e9642";
+const GRID_BORDER_COLOR = "#2f7832";
+const BOARD_OUTLINE_COLOR = "#1f5422";
 
-const SLAB_SHADOW_COLOR = "rgba(0, 0, 0, 0.35)";
-const SLAB_LEFT_COLOR = "#14171f";
-const SLAB_LEFT_BORDER = "#232936";
-const SLAB_RIGHT_COLOR = "#1a1f2a";
-const SLAB_RIGHT_BORDER = "#2b3343";
-const SLAB_CREASE_COLOR = "#3d485e";
+const SLAB_SHADOW_COLOR = "rgba(0, 0, 0, 0.40)";
+const SLAB_LEFT_COLOR = "#3d261a";
+const SLAB_LEFT_BORDER = "#281810";
+const SLAB_RIGHT_COLOR = "#583928";
+const SLAB_RIGHT_BORDER = "#3c251a";
+const SLAB_CREASE_COLOR = "#6e4933";
 
 const SHADOW_COLOR = "rgba(0, 0, 0, 0.55)";
 const SHADOW_RADIUS_RATIO = 0.52;

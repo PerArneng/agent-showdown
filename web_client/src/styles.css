@@ -35,6 +35,38 @@ aside {
   border: 1px solid var(--line);
   border-radius: 10px;
 }
+.title-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: -4px -4px 0 -4px;
+}
+.title-logo {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(130, 80, 255, 0.4)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+  transition:
+    transform 0.25s ease,
+    filter 0.25s ease;
+  user-select: none;
+}
+.title-logo:hover {
+  transform: scale(1.03);
+  filter: drop-shadow(0 6px 20px rgba(150, 100, 255, 0.6)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
 h1 {
   margin: 0;
   font-size: 15px;
