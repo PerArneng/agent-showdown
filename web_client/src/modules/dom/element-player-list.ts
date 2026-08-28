@@ -1,5 +1,6 @@
 import type { PlayerList } from "../../interfaces/dom/index.js";
 import type { PlayerState } from "../../interfaces/game/index.js";
+import { spriteUrlFor } from "../canvas/sprites.js";
 
 /** Edge module. Writes the roster into the document. */
 export class ElementPlayerList implements PlayerList {
@@ -23,6 +24,12 @@ export class ElementPlayerList implements PlayerList {
 
   private row(player: PlayerState): HTMLElement {
     const item = this.document.createElement("li");
+    const avatar = this.document.createElement("img");
+    avatar.className = "sprite-avatar";
+    avatar.src = spriteUrlFor(player.sprite);
+    avatar.alt = `Robot #${player.sprite}`;
+    avatar.width = 24;
+    avatar.height = 24;
     const swatch = this.document.createElement("span");
     swatch.className = "swatch";
     swatch.style.background = player.color;
@@ -35,7 +42,7 @@ export class ElementPlayerList implements PlayerList {
     reasoning.className = "reasoning";
     reasoning.textContent = player.reasoning;
     reasoning.title = player.reasoning;
-    item.append(swatch, name, cell, reasoning);
+    item.append(avatar, swatch, name, cell, reasoning);
     return item;
   }
 }

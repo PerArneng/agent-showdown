@@ -3,6 +3,7 @@ import type {
   GameEvent,
   PlayerState,
   Position,
+  SpritePicker,
   StateReducer,
 } from "../../interfaces/game/index.js";
 import type { Palette } from "./palette.js";
@@ -14,7 +15,10 @@ import type { Palette } from "./palette.js";
  * with what the server said.
  */
 export class DefaultStateReducer implements StateReducer {
-  constructor(private readonly palette: Palette) {}
+  constructor(
+    private readonly palette: Palette,
+    private readonly spritePicker: SpritePicker,
+  ) {}
 
   initial(): ClientState {
     return { board: null, players: [], status: "Waiting.", playing: false };
@@ -52,15 +56,21 @@ export class DefaultStateReducer implements StateReducer {
       return this.moved(state, name, position);
     }
     const color = this.palette.colorFor(state.players.length);
-    return [...state.players, { name, position, color, reasoning: "" }];
+    const sprite = this.spritePicker.pick(
+      name,
+      state.players.map((player) => player.sprite),
+    );
+    return [...state.players, { name, position, color, sprite, reasoning: "" }];
   }
 
   private moved(state: ClientState, name: string, position: Position): readonly PlayerState[] {
     if (!state.players.some((player) => player.name === name)) {
-      return [
-        ...state.players,
-        { name, position, color: this.palette.colorFor(state.players.length), reasoning: "" },
-      ];
+      const color = this.palette.colorFor(state.players.length);
+      const sprite = this.spritePicker.pick(
+        name,
+        state.players.map((player) => player.sprite),
+      );
+      return [...state.players, { name, position, color, sprite, reasoning: "" }];
     }
     return state.players.map((player) => (player.name === name ? { ...player, position } : player));
   }
@@ -68,12 +78,18 @@ export class DefaultStateReducer implements StateReducer {
   private reasoned(state: ClientState, name: string, reasoning: string): readonly PlayerState[] {
     // A client that connected mid-game may hear a player think before it sees it move.
     if (!state.players.some((player) => player.name === name)) {
+      const color = this.palette.colorFor(state.players.length);
+      const sprite = this.spritePicker.pick(
+        name,
+        state.players.map((player) => player.sprite),
+      );
       return [
         ...state.players,
         {
           name,
           position: { x: 0, y: 0 },
-          color: this.palette.colorFor(state.players.length),
+          color,
+          sprite,
           reasoning,
         },
       ];

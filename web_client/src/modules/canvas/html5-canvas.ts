@@ -1,12 +1,21 @@
 import type { Canvas } from "../../interfaces/canvas/index.js";
 import type { Position } from "../../interfaces/game/index.js";
+import { SPRITE_URLS } from "./sprites.js";
 
 /** Edge module. The only code that touches a real 2D context. */
 export class Html5Canvas implements Canvas {
+  private readonly spriteImages: readonly HTMLImageElement[];
+
   constructor(
     private readonly element: HTMLCanvasElement,
     private readonly context: CanvasRenderingContext2D,
-  ) {}
+  ) {
+    this.spriteImages = SPRITE_URLS.map((url) => {
+      const img = new Image();
+      img.src = url;
+      return img;
+    });
+  }
 
   get width(): number {
     return this.element.width;
@@ -35,5 +44,15 @@ export class Html5Canvas implements Canvas {
     this.context.beginPath();
     this.context.arc(centre.x, centre.y, radius, 0, Math.PI * 2);
     this.context.fill();
+  }
+
+  drawSprite(sprite: number, centre: Position, size: number): void {
+    const index = Math.abs(sprite) % this.spriteImages.length;
+    const img = this.spriteImages[index] ?? this.spriteImages[0];
+    if (img === undefined) {
+      return;
+    }
+    const half = size / 2;
+    this.context.drawImage(img, centre.x - half, centre.y - half, size, size);
   }
 }

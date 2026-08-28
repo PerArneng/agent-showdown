@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ClientState } from "../../src/interfaces/game/index.js";
-import { DefaultStateReducer, Palette } from "../../src/modules/game/index.js";
+import { DefaultStateReducer, HashSpritePicker, Palette } from "../../src/modules/game/index.js";
 
-const reducer = new DefaultStateReducer(new Palette());
+const reducer = new DefaultStateReducer(new Palette(), new HashSpritePicker());
 const empty = reducer.initial();
 
 function after(state: ClientState, ...events: Parameters<typeof reducer.reduce>[1][]): ClientState {
@@ -25,7 +25,7 @@ describe("DefaultStateReducer", () => {
     expect(state.status).toBe("Playing 10 rounds.");
   });
 
-  it("gives each player its own color, by join order", () => {
+  it("gives each player its own color and sprite, by join order and name", () => {
     const state = after(
       empty,
       { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
@@ -34,6 +34,11 @@ describe("DefaultStateReducer", () => {
 
     expect(state.players.map((player) => player.name)).toEqual(["one", "two"]);
     expect(state.players[0]?.color).not.toBe(state.players[1]?.color);
+    expect(state.players[0]?.sprite).toBeGreaterThanOrEqual(0);
+    expect(state.players[0]?.sprite).toBeLessThan(10);
+    expect(state.players[1]?.sprite).toBeGreaterThanOrEqual(0);
+    expect(state.players[1]?.sprite).toBeLessThan(10);
+    expect(state.players[0]?.sprite).not.toBe(state.players[1]?.sprite);
   });
 
   it("moves a player without touching the others", () => {

@@ -14,4 +14,5 @@ export type {
 export type { PlayerState } from "./player-state.js";
 export type { Position } from "./position.js";
 export type { Renderer } from "./renderer.js";
+export type { SpritePicker } from "./sprite-picker.js";
 export type { StateReducer } from "./state-reducer.js";

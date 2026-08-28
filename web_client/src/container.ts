@@ -13,7 +13,12 @@ import {
 } from "./modules/dom/index.js";
 import { DefaultEngine } from "./modules/engine/index.js";
 import { FixtureEventStream, SseEventStream } from "./modules/event_stream/index.js";
-import { BoardRenderer, DefaultStateReducer, Palette } from "./modules/game/index.js";
+import {
+  BoardRenderer,
+  DefaultStateReducer,
+  HashSpritePicker,
+  Palette,
+} from "./modules/game/index.js";
 import { HttpGameApi, OfflineGameApi } from "./modules/game_api/index.js";
 
 const EVENTS_URL = "/api/events";
@@ -44,8 +49,9 @@ export function createEngine(elements: Elements, demo: boolean): Engine {
   return new DefaultEngine(
     stream,
     api,
-    new DefaultStateReducer(new Palette()),
+    new DefaultStateReducer(new Palette(), new HashSpritePicker()),
     new BoardRenderer(new Html5Canvas(elements.canvas, elements.context)),
+
     new ElementPlayerList(elements.playerList, elements.document),
     new ElementStatusText(elements.statusText),
     new ElementStartButton(elements.startButton),

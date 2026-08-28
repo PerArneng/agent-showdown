@@ -12,4 +12,5 @@ export interface Canvas {
   clear(): void;
   strokeLine(from: Position, to: Position, color: string): void;
   fillCircle(centre: Position, radius: number, color: string): void;
+  drawSprite(sprite: number, centre: Position, size: number): void;
 }

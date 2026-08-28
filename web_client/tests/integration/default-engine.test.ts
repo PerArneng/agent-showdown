@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import demoGame from "../../fixtures/demo-game.json" with { type: "json" };
 import type { GameEvent } from "../../src/interfaces/game/index.js";
 import { DefaultEngine } from "../../src/modules/engine/index.js";
-import { BoardRenderer, DefaultStateReducer, Palette } from "../../src/modules/game/index.js";
+import {
+  BoardRenderer,
+  DefaultStateReducer,
+  HashSpritePicker,
+  Palette,
+} from "../../src/modules/game/index.js";
 import {
   InMemoryConnectionIndicator,
   InMemoryPlayerList,
@@ -27,7 +32,7 @@ class Fixture {
     this.engine = new DefaultEngine(
       stream,
       this.api,
-      new DefaultStateReducer(new Palette()),
+      new DefaultStateReducer(new Palette(), new HashSpritePicker()),
       new BoardRenderer(this.canvas),
       this.playerList,
       this.statusText,

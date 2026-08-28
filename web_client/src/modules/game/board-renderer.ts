@@ -2,7 +2,8 @@ import type { Canvas } from "../../interfaces/canvas/index.js";
 import type { Board, ClientState, Renderer } from "../../interfaces/game/index.js";
 
 const GRID_COLOR = "#262b35";
-const PLAYER_RADIUS_RATIO = 0.3;
+const PLAYER_RADIUS_RATIO = 0.35;
+const SPRITE_SIZE_RATIO = 0.85;
 
 /** Turns state into drawing calls. Knows the canvas contract and nothing else. */
 export class BoardRenderer implements Renderer {
@@ -16,14 +17,13 @@ export class BoardRenderer implements Renderer {
     const cell = this.cellSize(state.board);
     this.grid(state.board, cell);
     for (const player of state.players) {
-      this.canvas.fillCircle(
-        {
-          x: (player.position.x + 0.5) * cell.x,
-          y: (player.position.y + 0.5) * cell.y,
-        },
-        Math.min(cell.x, cell.y) * PLAYER_RADIUS_RATIO,
-        player.color,
-      );
+      const centre = {
+        x: (player.position.x + 0.5) * cell.x,
+        y: (player.position.y + 0.5) * cell.y,
+      };
+      const minDimension = Math.min(cell.x, cell.y);
+      this.canvas.fillCircle(centre, minDimension * PLAYER_RADIUS_RATIO, player.color);
+      this.canvas.drawSprite(player.sprite, centre, minDimension * SPRITE_SIZE_RATIO);
     }
   }
 

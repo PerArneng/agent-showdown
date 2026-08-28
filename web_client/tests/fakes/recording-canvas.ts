@@ -14,6 +14,12 @@ export type DrawCall =
       readonly centre: Position;
       readonly radius: number;
       readonly color: string;
+    }
+  | {
+      readonly kind: "sprite";
+      readonly sprite: number;
+      readonly centre: Position;
+      readonly size: number;
     };
 
 /** Test fake. Records what it was asked to draw instead of drawing it. */
@@ -37,7 +43,15 @@ export class RecordingCanvas implements Canvas {
     this.calls.push({ kind: "circle", centre, radius, color });
   }
 
+  drawSprite(sprite: number, centre: Position, size: number): void {
+    this.calls.push({ kind: "sprite", sprite, centre, size });
+  }
+
   circles(): readonly DrawCall[] {
     return this.calls.filter((call) => call.kind === "circle");
+  }
+
+  sprites(): readonly DrawCall[] {
+    return this.calls.filter((call) => call.kind === "sprite");
   }
 }

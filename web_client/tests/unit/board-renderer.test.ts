@@ -37,12 +37,17 @@ describe("BoardRenderer", () => {
     new BoardRenderer(canvas).render(
       state({
         board: { width: 10, height: 10 },
-        players: [{ name: "one", position: { x: 0, y: 0 }, color: "#fff", reasoning: "" }],
+        players: [
+          { name: "one", position: { x: 0, y: 0 }, color: "#fff", sprite: 2, reasoning: "" },
+        ],
       }),
     );
 
     expect(canvas.circles()).toEqual([
-      { kind: "circle", centre: { x: 5, y: 5 }, radius: 3, color: "#fff" },
+      { kind: "circle", centre: { x: 5, y: 5 }, radius: 3.5, color: "#fff" },
+    ]);
+    expect(canvas.sprites()).toEqual([
+      { kind: "sprite", sprite: 2, centre: { x: 5, y: 5 }, size: 8.5 },
     ]);
   });
 
@@ -52,11 +57,18 @@ describe("BoardRenderer", () => {
     new BoardRenderer(canvas).render(
       state({
         board: { width: 10, height: 10 },
-        players: [{ name: "one", position: { x: 1, y: 1 }, color: "#fff", reasoning: "" }],
+        players: [
+          { name: "one", position: { x: 1, y: 1 }, color: "#fff", sprite: 2, reasoning: "" },
+        ],
       }),
     );
 
     expect(canvas.circles()[0]).toMatchObject({ centre: { x: 15, y: 7.5 } });
+    expect(canvas.sprites()[0]).toMatchObject({
+      centre: { x: 15, y: 7.5 },
+      sprite: 2,
+      size: 4.25,
+    });
   });
 
   it("clears before every frame", () => {
