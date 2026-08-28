@@ -22,4 +22,7 @@ class DummyPlayer:
     def take_turn(self, view: GameView) -> PlayerTurn:
         self._clock.sleep(self._think_time)
         direction = self._randomizer.choice(list(Direction))
-        return PlayerTurn(movement=Movement(moves=(Move(direction=direction),)))
+        return PlayerTurn(
+            reasoning=f"no plan, wandering {direction}",
+            movement=Movement(moves=(Move(direction=direction),)),
+        )

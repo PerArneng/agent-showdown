@@ -15,12 +15,18 @@ describe("the demo fixture", () => {
     expect(events.at(-1)).toEqual({ type: "game_ended", rounds_played: 10 });
   });
 
+  it("records what the built-in agent was thinking", () => {
+    const reasoned = events.filter((event) => event.type === "player_reasoned");
+    expect(reasoned.some((event) => event.player === "simple-strands-1")).toBe(true);
+  });
+
   it("only contains event types the client knows", () => {
     const known = new Set([
       "game_started",
       "player_joined",
       "round_started",
       "player_moved",
+      "player_reasoned",
       "move_blocked",
       "turn_failed",
       "game_ended",

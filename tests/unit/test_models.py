@@ -48,7 +48,7 @@ def test_position_is_frozen() -> None:
 
 
 def test_player_turn_is_frozen() -> None:
-    turn = PlayerTurn(movement=Movement(moves=(Move(direction="UP"),)))
+    turn = PlayerTurn(reasoning="up", movement=Movement(moves=(Move(direction="UP"),)))
     with pytest.raises(ValidationError):
         turn.movement = Movement(moves=())  # type: ignore[misc]
 

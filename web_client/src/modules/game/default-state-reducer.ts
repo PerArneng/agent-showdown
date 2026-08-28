@@ -25,6 +25,8 @@ export class DefaultStateReducer implements StateReducer {
       case "player_moved":
         // A client that connected mid-game never saw the join, so a move introduces the player.
         return { ...state, players: this.moved(state, event.player, event.destination) };
+      case "player_reasoned":
+        return { ...state, players: this.reasoned(state, event.player, event.reasoning) };
       case "move_blocked":
         return state;
       case "turn_failed":
@@ -44,18 +46,36 @@ export class DefaultStateReducer implements StateReducer {
       return this.moved(state, name, position);
     }
     const color = this.palette.colorFor(state.players.length);
-    return [...state.players, { name, position, color }];
+    return [...state.players, { name, position, color, reasoning: "" }];
   }
 
   private moved(state: ClientState, name: string, position: Position): readonly PlayerState[] {
     if (!state.players.some((player) => player.name === name)) {
       return [
         ...state.players,
-        { name, position, color: this.palette.colorFor(state.players.length) },
+        { name, position, color: this.palette.colorFor(state.players.length), reasoning: "" },
       ];
     }
     return state.players.map((player) =>
       player.name === name ? { ...player, position } : player
+    );
+  }
+
+  private reasoned(state: ClientState, name: string, reasoning: string): readonly PlayerState[] {
+    // A client that connected mid-game may hear a player think before it sees it move.
+    if (!state.players.some((player) => player.name === name)) {
+      return [
+        ...state.players,
+        {
+          name,
+          position: { x: 0, y: 0 },
+          color: this.palette.colorFor(state.players.length),
+          reasoning,
+        },
+      ];
+    }
+    return state.players.map((player) =>
+      player.name === name ? { ...player, reasoning } : player
     );
   }
 }

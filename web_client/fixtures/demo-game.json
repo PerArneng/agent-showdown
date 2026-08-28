@@ -9,7 +9,7 @@
   },
   {
     "type": "player_joined",
-    "player": "dummy-2",
+    "player": "simple-strands-1",
     "position": {
       "x": 9,
       "y": 9
@@ -28,6 +28,11 @@
     "round_number": 1
   },
   {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering UP_RIGHT"
+  },
+  {
     "type": "move_blocked",
     "player": "dummy-1",
     "position": {
@@ -37,33 +42,13 @@
     "direction": "UP_RIGHT"
   },
   {
-    "type": "move_blocked",
-    "player": "dummy-2",
-    "position": {
-      "x": 9,
-      "y": 9
-    },
-    "direction": "UP_RIGHT"
-  },
-  {
-    "type": "round_started",
-    "round_number": 2
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "the top-left corner is unclaimed"
   },
   {
     "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 0,
-      "y": 0
-    },
-    "destination": {
-      "x": 0,
-      "y": 1
-    }
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-2",
+    "player": "simple-strands-1",
     "source": {
       "x": 9,
       "y": 9
@@ -71,6 +56,44 @@
     "destination": {
       "x": 8,
       "y": 8
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 2
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering RIGHT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 0,
+      "y": 0
+    },
+    "destination": {
+      "x": 1,
+      "y": 0
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "staying on the diagonal"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 8,
+      "y": 8
+    },
+    "destination": {
+      "x": 7,
+      "y": 7
     }
   },
   {
@@ -78,23 +101,36 @@
     "round_number": 3
   },
   {
-    "type": "move_blocked",
+    "type": "player_reasoned",
     "player": "dummy-1",
-    "position": {
-      "x": 0,
-      "y": 1
-    },
-    "direction": "UP_LEFT"
+    "reasoning": "no plan, wandering DOWN"
   },
   {
     "type": "player_moved",
-    "player": "dummy-2",
+    "player": "dummy-1",
     "source": {
-      "x": 8,
-      "y": 8
+      "x": 1,
+      "y": 0
     },
     "destination": {
+      "x": 1,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "edging west while I have room"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
       "x": 7,
+      "y": 7
+    },
+    "destination": {
+      "x": 6,
       "y": 7
     }
   },
@@ -103,160 +139,9 @@
     "round_number": 4
   },
   {
-    "type": "player_moved",
+    "type": "player_reasoned",
     "player": "dummy-1",
-    "source": {
-      "x": 0,
-      "y": 1
-    },
-    "destination": {
-      "x": 1,
-      "y": 1
-    }
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-2",
-    "source": {
-      "x": 7,
-      "y": 7
-    },
-    "destination": {
-      "x": 7,
-      "y": 8
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 5
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 1,
-      "y": 1
-    },
-    "destination": {
-      "x": 0,
-      "y": 0
-    }
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-2",
-    "source": {
-      "x": 7,
-      "y": 8
-    },
-    "destination": {
-      "x": 8,
-      "y": 9
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 6
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 0,
-      "y": 0
-    },
-    "destination": {
-      "x": 0,
-      "y": 1
-    }
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-2",
-    "source": {
-      "x": 8,
-      "y": 9
-    },
-    "destination": {
-      "x": 8,
-      "y": 8
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 7
-  },
-  {
-    "type": "move_blocked",
-    "player": "dummy-1",
-    "position": {
-      "x": 0,
-      "y": 1
-    },
-    "direction": "LEFT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-2",
-    "source": {
-      "x": 8,
-      "y": 8
-    },
-    "destination": {
-      "x": 9,
-      "y": 9
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 8
-  },
-  {
-    "type": "move_blocked",
-    "player": "dummy-1",
-    "position": {
-      "x": 0,
-      "y": 1
-    },
-    "direction": "LEFT"
-  },
-  {
-    "type": "move_blocked",
-    "player": "dummy-2",
-    "position": {
-      "x": 9,
-      "y": 9
-    },
-    "direction": "UP_RIGHT"
-  },
-  {
-    "type": "round_started",
-    "round_number": 9
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 0,
-      "y": 1
-    },
-    "destination": {
-      "x": 1,
-      "y": 1
-    }
-  },
-  {
-    "type": "move_blocked",
-    "player": "dummy-2",
-    "position": {
-      "x": 9,
-      "y": 9
-    },
-    "direction": "UP_RIGHT"
-  },
-  {
-    "type": "round_started",
-    "round_number": 10
+    "reasoning": "no plan, wandering RIGHT"
   },
   {
     "type": "player_moved",
@@ -267,17 +152,253 @@
     },
     "destination": {
       "x": 2,
-      "y": 0
+      "y": 1
     }
   },
   {
-    "type": "move_blocked",
-    "player": "dummy-2",
-    "position": {
-      "x": 9,
-      "y": 9
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "north again"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 6,
+      "y": 7
     },
-    "direction": "RIGHT"
+    "destination": {
+      "x": 6,
+      "y": 6
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 5
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering DOWN_RIGHT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 2,
+      "y": 1
+    },
+    "destination": {
+      "x": 3,
+      "y": 2
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "cutting back down"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 6,
+      "y": 6
+    },
+    "destination": {
+      "x": 5,
+      "y": 7
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 6
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering LEFT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 3,
+      "y": 2
+    },
+    "destination": {
+      "x": 2,
+      "y": 2
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "the top-left corner is unclaimed"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 5,
+      "y": 7
+    },
+    "destination": {
+      "x": 4,
+      "y": 6
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 7
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering UP_RIGHT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 2,
+      "y": 2
+    },
+    "destination": {
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "staying on the diagonal"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 4,
+      "y": 6
+    },
+    "destination": {
+      "x": 3,
+      "y": 5
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 8
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering RIGHT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 3,
+      "y": 1
+    },
+    "destination": {
+      "x": 4,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "edging west while I have room"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 3,
+      "y": 5
+    },
+    "destination": {
+      "x": 2,
+      "y": 5
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 9
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering DOWN"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 4,
+      "y": 1
+    },
+    "destination": {
+      "x": 4,
+      "y": 2
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "north again"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 2,
+      "y": 5
+    },
+    "destination": {
+      "x": 2,
+      "y": 4
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 10
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "no plan, wandering RIGHT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 4,
+      "y": 2
+    },
+    "destination": {
+      "x": 5,
+      "y": 2
+    }
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "cutting back down"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 2,
+      "y": 4
+    },
+    "destination": {
+      "x": 1,
+      "y": 5
+    }
   },
   {
     "type": "game_ended",

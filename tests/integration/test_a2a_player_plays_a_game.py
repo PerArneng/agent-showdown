@@ -25,9 +25,9 @@ from tests.fakes import (
 
 # The remote agent walks right, then down, then right again.
 _REPLIES = [
-    '{"movement": {"moves": [{"direction": "RIGHT"}]}}',
-    '{"movement": {"moves": [{"direction": "DOWN"}]}}',
-    '{"movement": {"moves": [{"direction": "RIGHT"}]}}',
+    '{"reasoning": "east first", "movement": {"moves": [{"direction": "RIGHT"}]}}',
+    '{"reasoning": "then south", "movement": {"moves": [{"direction": "DOWN"}]}}',
+    '{"reasoning": "east again", "movement": {"moves": [{"direction": "RIGHT"}]}}',
 ]
 
 

@@ -7,7 +7,8 @@ from typer.testing import CliRunner, Result
 
 from agent_showdown.cli import main as cli_main
 from agent_showdown.container import Container
-from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole
+from agent_showdown.interfaces.game import Direction, Move, Movement, PlayerTurn
+from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedTurnPlanner
 
 runner = CliRunner()
 
@@ -80,6 +81,12 @@ def test_the_container_still_plays_a_game() -> None:
     container.clock.override(FrozenClock(datetime(2025, 9, 10)))
     container.console.override(console)
     container.randomizer.override(FixedRandomizer([3, 1]))
+    # Stands in for the model, so the suite never opens a socket.
+    container.turn_planner.override(
+        ScriptedTurnPlanner(
+            [PlayerTurn(reasoning="", movement=Movement(moves=(Move(direction=Direction.UP),)))]
+        )
+    )
 
     container.engine().start_game()
 

@@ -31,7 +31,11 @@ export class ElementPlayerList implements PlayerList {
     const cell = this.document.createElement("span");
     cell.className = "cell";
     cell.textContent = `${player.position.x},${player.position.y}`;
-    item.append(swatch, name, cell);
+    const reasoning = this.document.createElement("span");
+    reasoning.className = "reasoning";
+    reasoning.textContent = player.reasoning;
+    reasoning.title = player.reasoning;
+    item.append(swatch, name, cell, reasoning);
     return item;
   }
 }

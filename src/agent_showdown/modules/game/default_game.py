@@ -64,6 +64,9 @@ class DefaultGame:
         except Exception as error:  # A remote player fails in ways we cannot enumerate.
             self._fail_turn(player, f"{type(error).__name__}: {error}")
             return
+        # Before the plan is judged, so an over-long plan still says what it was for.
+        if turn.reasoning:
+            self._emit(lambda listener: listener.player_reasoned(player, turn.reasoning))
         moves = turn.movement.moves
         if len(moves) > _MAX_MOVES_PER_TURN:
             self._fail_turn(

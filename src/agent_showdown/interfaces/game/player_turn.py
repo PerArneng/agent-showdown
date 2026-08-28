@@ -8,4 +8,5 @@ class PlayerTurn(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    reasoning: str
     movement: Movement

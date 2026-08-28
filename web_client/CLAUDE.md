@@ -52,6 +52,8 @@ canvas, no time, no randomness. Anything worth testing belongs there rather than
 - Adding a listener method on the Python side means adding the variant here too. `tsc` will then
   point at the `switch` in `DefaultStateReducer` that no longer covers every case — the exhaustive
   switch is deliberate, so do not add a `default` branch to silence it.
+- The fixture is a **recording of the real engine**, not hand-written. Re-record it rather than
+  editing it by hand when the event shapes change.
 - `tests/unit/demo-fixture.test.ts` reads the recorded fixture and catches drift between the two
   sides in the meantime.
 - **No runtime validation, deliberately.** The only publisher is our own typed server; `zod` would

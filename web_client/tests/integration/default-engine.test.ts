@@ -46,7 +46,7 @@ describe("DefaultEngine", () => {
 
     fixture.engine.connect();
 
-    expect(fixture.playerList.names()).toEqual(["dummy-1", "dummy-2"]);
+    expect(fixture.playerList.names()).toEqual(["dummy-1", "simple-strands-1"]);
     expect(fixture.statusText.last()).toBe("Game over after 10 rounds.");
   });
 

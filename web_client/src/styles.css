@@ -42,9 +42,21 @@ button {
 }
 button:disabled { background: var(--line); color: var(--muted); cursor: default; }
 ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-li { display: flex; align-items: center; gap: 10px; }
+/* Wrapping, so the reasoning drops onto its own line under the name. */
+li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 .cell { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.reasoning {
+  flex-basis: 100%;
+  margin-left: 22px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.reasoning:empty { display: none; }
 .empty, #status { color: var(--muted); }
 #status { margin-top: auto; font-size: 13px; }
 main { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }

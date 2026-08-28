@@ -29,6 +29,12 @@ export interface PlayerMovedEvent {
   readonly destination: Position;
 }
 
+export interface PlayerReasonedEvent {
+  readonly type: "player_reasoned";
+  readonly player: string;
+  readonly reasoning: string;
+}
+
 export interface MoveBlockedEvent {
   readonly type: "move_blocked";
   readonly player: string;
@@ -52,6 +58,7 @@ export type GameEvent =
   | PlayerJoinedEvent
   | RoundStartedEvent
   | PlayerMovedEvent
+  | PlayerReasonedEvent
   | MoveBlockedEvent
   | TurnFailedEvent
   | GameEndedEvent;

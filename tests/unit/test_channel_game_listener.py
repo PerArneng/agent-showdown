@@ -7,6 +7,7 @@ from agent_showdown.interfaces.game import (
     MoveBlockedEvent,
     PlayerJoinedEvent,
     PlayerMovedEvent,
+    PlayerReasonedEvent,
     PlayerTurn,
     Position,
     RoundStartedEvent,
@@ -64,6 +65,16 @@ def test_player_moved_carries_both_positions() -> None:
 
     assert channel.published == [
         PlayerMovedEvent(player="bob", source=Position(x=0, y=0), destination=Position(x=1, y=0))
+    ]
+
+
+def test_player_reasoned_carries_the_text() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_reasoned(NamedPlayer("bob"), "the corner is closer")
+
+    assert channel.published == [
+        PlayerReasonedEvent(player="bob", reasoning="the corner is closer")
     ]
 
 

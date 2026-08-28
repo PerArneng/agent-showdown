@@ -7,12 +7,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from agent_showdown.interfaces.game import (
+    Direction,
     GameEndedEvent,
     GameListener,
     GameStartedEvent,
+    Move,
+    Movement,
     PlayerJoinedEvent,
+    PlayerTurn,
     RoundStartedEvent,
 )
+from agent_showdown.modules.builtin_agents import SimpleStrandsPlayerFactory
 from agent_showdown.modules.engine import DefaultEngine
 from agent_showdown.modules.event_channel import QueueEventChannel
 from agent_showdown.modules.game import (
@@ -30,11 +35,17 @@ from tests.fakes import (
     InMemoryFileSystem,
     RecordingGameListener,
     ScriptedEventSubscription,
+    ScriptedTurnPlanner,
 )
 
 _CLIENT_DIR = Path("/app/dist")
 _PAGE = "<!doctype html><title>agent-showdown</title><canvas id='board'></canvas>"
 _POLL = 0.5
+
+# The built-in agent's turn, with the model replaced by a script.
+_PLANNED = PlayerTurn(
+    reasoning="", movement=Movement(moves=(Move(direction=Direction.UP),))
+)
 
 
 def _never() -> bool:
@@ -77,6 +88,10 @@ class Fixture:
             game_factory=DefaultGameFactory(),
             player_factory=DummyPlayerFactory(
                 randomizer=FixedRandomizer([3, 1]), clock=self.clock, think_time=0.0
+            ),
+            agent_player_factory=SimpleStrandsPlayerFactory(
+                ScriptedTurnPlanner([_PLANNED]),
+                max_moves=4,
             ),
             game_listeners=[LogGameListener(self.logger), *extra_listeners],
         )
@@ -197,6 +212,7 @@ class ReentrantListener:
     def player_joined(self, player: object, position: object) -> None: ...
     def round_started(self, round_number: int) -> None: ...
     def player_moved(self, player: object, source: object, destination: object) -> None: ...
+    def player_reasoned(self, player: object, reasoning: str) -> None: ...
     def move_blocked(self, player: object, position: object, direction: object) -> None: ...
     def turn_failed(self, player: object, reason: str) -> None: ...
     def game_ended(self, rounds_played: int) -> None: ...

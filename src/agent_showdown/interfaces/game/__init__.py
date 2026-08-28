@@ -14,6 +14,7 @@ from agent_showdown.interfaces.game.player import Player
 from agent_showdown.interfaces.game.player_factory import PlayerFactory
 from agent_showdown.interfaces.game.player_joined_event import PlayerJoinedEvent
 from agent_showdown.interfaces.game.player_moved_event import PlayerMovedEvent
+from agent_showdown.interfaces.game.player_reasoned_event import PlayerReasonedEvent
 from agent_showdown.interfaces.game.player_turn import PlayerTurn
 from agent_showdown.interfaces.game.position import Position
 from agent_showdown.interfaces.game.round_started_event import RoundStartedEvent
@@ -36,6 +37,7 @@ __all__ = [
     "PlayerFactory",
     "PlayerJoinedEvent",
     "PlayerMovedEvent",
+    "PlayerReasonedEvent",
     "PlayerTurn",
     "Position",
     "RoundStartedEvent",

@@ -25,6 +25,10 @@ class GameListener(Protocol):
         """A player left `source` and now stands on `destination`."""
         ...
 
+    def player_reasoned(self, player: Player, reasoning: str) -> None:
+        """A player explained the turn it planned, before the moves are applied."""
+        ...
+
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         """A move would have left the board, so the player stayed on `position`."""
         ...

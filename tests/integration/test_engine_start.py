@@ -1,11 +1,26 @@
 from datetime import datetime
 
+from agent_showdown.interfaces.game import Direction, Move, Movement, PlayerTurn
+from agent_showdown.modules.builtin_agents import SimpleStrandsPlayerFactory
 from agent_showdown.modules.engine import DefaultEngine
 from agent_showdown.modules.game import DefaultGameFactory, DummyPlayerFactory, LogGameListener
 from agent_showdown.modules.log import AnsiLogFormatter, DefaultLogger
-from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, RecordingGameListener
+from tests.fakes import (
+    FixedRandomizer,
+    FrozenClock,
+    InMemoryConsole,
+    RecordingGameListener,
+    ScriptedTurnPlanner,
+)
 
 _INFO = "2025-09-10 \x1b[32mINFO\x1b[0m "
+_WARNING = "2025-09-10 \x1b[33mWARNING\x1b[0m "
+
+# The built-in agent, with the model replaced by a script. No test ever reaches a model.
+_PLANNED = PlayerTurn(
+    reasoning="walking the diagonal",
+    movement=Movement(moves=(Move(direction=Direction.UP_LEFT),)),
+)
 
 
 def _engine(console: InMemoryConsole, *extra_listeners: RecordingGameListener) -> DefaultEngine:
@@ -23,6 +38,9 @@ def _engine(console: InMemoryConsole, *extra_listeners: RecordingGameListener) -
             clock=FrozenClock(datetime(2025, 9, 10)),
             think_time=0.0,
         ),
+        agent_player_factory=SimpleStrandsPlayerFactory(
+            ScriptedTurnPlanner([_PLANNED]), max_moves=4
+        ),
         game_listeners=[LogGameListener(logger), *extra_listeners],
     )
 
@@ -36,7 +54,7 @@ def test_start_plays_a_whole_game_entirely_in_memory() -> None:
     assert console.lines[:4] == [
         _INFO + "started",
         _INFO + "player dummy-1 joined at (0,0)",
-        _INFO + "player dummy-2 joined at (9,9)",
+        _INFO + "player simple-strands-1 joined at (9,9)",
         _INFO + "game started on a 10x10 board for 10 rounds",
     ]
     assert console.lines[-1] == _INFO + "game ended after 10 rounds"

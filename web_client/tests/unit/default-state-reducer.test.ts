@@ -67,6 +67,34 @@ describe("DefaultStateReducer", () => {
     expect(state.players[0]?.position).toEqual({ x: 1, y: 1 });
   });
 
+  it("remembers the latest reasoning against the player that gave it", () => {
+    const joined = after(
+      empty,
+      { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
+      { type: "player_joined", player: "two", position: { x: 9, y: 9 } }
+    );
+
+    const state = after(
+      joined,
+      { type: "player_reasoned", player: "one", reasoning: "first thought" },
+      { type: "player_reasoned", player: "one", reasoning: "second thought" }
+    );
+
+    expect(state.players[0]?.reasoning).toBe("second thought");
+    expect(state.players[1]?.reasoning).toBe("");
+  });
+
+  it("adopts a player that thinks before it is seen to move", () => {
+    const state = after(empty, {
+      type: "player_reasoned",
+      player: "late",
+      reasoning: "just arrived",
+    });
+
+    expect(state.players).toHaveLength(1);
+    expect(state.players[0]?.reasoning).toBe("just arrived");
+  });
+
   it("leaves everything alone when a move is blocked", () => {
     const joined = after(empty, {
       type: "player_joined",

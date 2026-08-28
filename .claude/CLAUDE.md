@@ -10,7 +10,7 @@ TypeScript project in `web_client/` and **must be built first** — it has its o
 - `interfaces/` holds Protocols and frozen Pydantic models only — no behaviour, and it never imports
   from `modules/` or `cli/`. `modules/` holds the implementations under the same domain names.
 - Domains today: `clock`, `console`, `file_system`, `randomizer`, `event_channel`, `log`,
-  `game`, `agent_client`, `engine`. Read the real contracts in
+  `game`, `agent_client`, `builtin_agents`, `engine`. Read the real contracts in
   `src/agent_showdown/interfaces/`.
 - Two frontends, both thin adapters over `Engine`: `cli/` and `web/`. `cli/` builds the
   container and hands the pieces to `web.create_app`; nothing else may import `Container`.
@@ -99,6 +99,10 @@ player never sees the board — only its own `GameView`, handed to it once per t
   rule of the board, not a property of the word. Do not add a `delta` property to the enum.
 - Every event carries a `Position`, never loose `x`/`y` pairs.
 - `turn_failed` logs at WARNING. Every other game event logs at INFO.
+- **`PlayerTurn` carries a `reasoning` alongside the plan**, and `DefaultGame` reports it as
+  `player_reasoned` *before* it judges the plan — so an over-long plan still says what it was for.
+  An empty reasoning emits nothing, which is why a plain `ScriptedPlayer` leaves the event
+  sequence untouched. The event reaches the browser like any other and lands in the player list.
 - **`Player` is synchronous and stays that way.** A2A's JSON-RPC `SendMessage` blocks by default, so
   a remote player needs no `async` — nothing forces it onto `Game`, `Engine` or the CLI. The web
   frontend is the only async code, and it keeps the blocking game on a worker thread.
@@ -113,6 +117,25 @@ player never sees the board — only its own `GameView`, handed to it once per t
   fake transport; the real HTTP client is not written yet. `A2APlayerFactory` uses the player name
   as the A2A `contextId` — a per-game unique id needs a `uuid`, which is nondeterministic input and
   would arrive as its own edge module.
+
+## Built-in agents
+
+`modules/builtin_agents/` holds contestants that live **in this process**. Nothing is served and
+nothing is dialled over A2A — the container hands them to the engine like any other collaborator.
+One sub-package per agent, named after it: `simple_strands/` today.
+
+- **The player is pure, the model call is not.** `SimpleStrandsPlayer` renders a `GameView` into a
+  prompt and hands it to a `TurnPlanner`. `StrandsTurnPlanner` is the only thing that imports
+  `strands` or opens a socket, which is what keeps the player unit-testable in memory and the
+  suite free of npm-style network flakiness. **No test may reach a real model**: override
+  `container.turn_planner` with `ScriptedTurnPlanner`, or the suite hangs on a DNS lookup.
+- A planner failure raises `AgentClientError` — the same contract a remote agent already uses, and
+  `DefaultGame`'s trust boundary turns it into `turn_failed` either way.
+- **A fresh `Agent` per turn.** The contestant is stateless by design, and an unchanging system
+  prompt is what a vLLM prefix cache keys on. Reasoning tokens are spent out of `max_tokens`
+  before any answer arrives, so budget it generously and set a timeout in the hundreds of seconds.
+- `max_moves` on the factory is what the *prompt* asks for; `_MAX_MOVES_PER_TURN` in `DefaultGame`
+  is what the *rules* allow. Set the first below the second, or every turn is refused whole.
 
 ## Serving the web client
 
@@ -176,7 +199,8 @@ npm --prefix web_client test        # vitest, no browser
 npm --prefix web_client run check   # tsc --noEmit
 ```
 
-Runtime deps: `typer`, `dependency-injector`, `pydantic`, `fastapi`, `uvicorn`.
+Runtime deps: `typer`, `dependency-injector`, `pydantic`, `fastapi`, `uvicorn`,
+`strands-agents[openai]`.
 Dev: `pytest`, `mypy`, `ruff`, `httpx`.
 Python >= 3.11. The client's dependencies are all dev-only and live in `web_client/`.
 

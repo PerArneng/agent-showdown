@@ -8,6 +8,7 @@ from agent_showdown.interfaces.game import (
     Player,
     PlayerJoinedEvent,
     PlayerMovedEvent,
+    PlayerReasonedEvent,
     Position,
     RoundStartedEvent,
     TurnFailedEvent,
@@ -35,6 +36,9 @@ class ChannelGameListener:
         self._channel.publish(
             PlayerMovedEvent(player=player.get_name(), source=source, destination=destination)
         )
+
+    def player_reasoned(self, player: Player, reasoning: str) -> None:
+        self._channel.publish(PlayerReasonedEvent(player=player.get_name(), reasoning=reasoning))
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         self._channel.publish(

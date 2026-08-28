@@ -7,6 +7,7 @@ export type {
   MoveBlockedEvent,
   PlayerJoinedEvent,
   PlayerMovedEvent,
+  PlayerReasonedEvent,
   RoundStartedEvent,
   TurnFailedEvent,
 } from "./game-event.js";

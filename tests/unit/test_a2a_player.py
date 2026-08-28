@@ -13,7 +13,10 @@ _VIEW = GameView(
     position=Position(x=1, y=1),
     round_number=2,
 )
-_TURN = '{"movement": {"moves": [{"direction": "UP"}, {"direction": "DOWN_LEFT"}]}}'
+_TURN = (
+    '{"reasoning": "cutting to the corner", '
+    '"movement": {"moves": [{"direction": "UP"}, {"direction": "DOWN_LEFT"}]}}'
+)
 
 
 def test_get_name_round_trips() -> None:
@@ -51,7 +54,7 @@ def test_a_malformed_reply_raises() -> None:
 
 
 def test_a_reply_naming_an_unknown_direction_raises() -> None:
-    reply = '{"movement": {"moves": [{"direction": "SIDEWAYS"}]}}'
+    reply = '{"reasoning": "", "movement": {"moves": [{"direction": "SIDEWAYS"}]}}'
     player = A2APlayer("agent-1", "ctx", ScriptedAgentClient([reply]))
 
     with pytest.raises(ValidationError):

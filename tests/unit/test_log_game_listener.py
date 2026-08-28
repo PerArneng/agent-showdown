@@ -30,6 +30,7 @@ def test_every_event_logs_one_info_line() -> None:
     listener.game_started(Board(width=10, height=10), 10)
     listener.player_joined(player, Position(x=0, y=0))
     listener.round_started(3)
+    listener.player_reasoned(player, "the corner is closer")
     listener.player_moved(player, Position(x=0, y=0), Position(x=1, y=0))
     listener.move_blocked(player, Position(x=0, y=0), Direction.UP)
     listener.game_ended(10)
@@ -38,6 +39,7 @@ def test_every_event_logs_one_info_line() -> None:
         _INFO + "game started on a 10x10 board for 10 rounds",
         _INFO + "player dummy-1 joined at (0,0)",
         _INFO + "round 3 started",
+        _INFO + "player dummy-1 reasoned: the corner is closer",
         _INFO + "player dummy-1 moved from (0,0) to (1,0)",
         _INFO + "player dummy-1 blocked moving UP from (0,0)",
         _INFO + "game ended after 10 rounds",

@@ -14,10 +14,11 @@ from tests.fakes import RecordingGameListener
 class ScriptedPlayer:
     """Plays a fixed plan every round, so the game under test stays deterministic."""
 
-    def __init__(self, name: str, *directions: Direction) -> None:
+    def __init__(self, name: str, *directions: Direction, reasoning: str = "") -> None:
         self._name = name
         self._turn = PlayerTurn(
-            movement=Movement(moves=tuple(Move(direction=d) for d in directions))
+            reasoning=reasoning,
+            movement=Movement(moves=tuple(Move(direction=d) for d in directions)),
         )
         self.views: list[GameView] = []
 
@@ -212,3 +213,36 @@ def test_a_plan_exactly_at_the_limit_is_allowed() -> None:
 
     assert listener.names().count("turn_failed") == 0
     assert listener.names().count("player_moved") == 8
+
+
+def test_a_turn_with_reasoning_reports_it_before_the_moves() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    player = ScriptedPlayer("a", Direction.UP, reasoning="north looks open")
+    game.register_player(player, Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert listener.events[3] == ("player_reasoned", ("a", "north looks open"))
+    assert listener.names()[4] == "player_moved"
+
+
+def test_a_turn_without_reasoning_reports_nothing() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a", Direction.UP), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert "player_reasoned" not in listener.names()
+
+
+def test_an_over_long_plan_still_reports_the_reasoning_behind_it() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    plan = (Direction.UP,) * 9
+    game.register_player(ScriptedPlayer("a", *plan, reasoning="sprinting"), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert listener.names()[3:5] == ["player_reasoned", "turn_failed"]

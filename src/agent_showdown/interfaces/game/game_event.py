@@ -7,6 +7,7 @@ from agent_showdown.interfaces.game.game_started_event import GameStartedEvent
 from agent_showdown.interfaces.game.move_blocked_event import MoveBlockedEvent
 from agent_showdown.interfaces.game.player_joined_event import PlayerJoinedEvent
 from agent_showdown.interfaces.game.player_moved_event import PlayerMovedEvent
+from agent_showdown.interfaces.game.player_reasoned_event import PlayerReasonedEvent
 from agent_showdown.interfaces.game.round_started_event import RoundStartedEvent
 from agent_showdown.interfaces.game.turn_failed_event import TurnFailedEvent
 
@@ -17,6 +18,7 @@ GameEvent = Annotated[
     | PlayerJoinedEvent
     | RoundStartedEvent
     | PlayerMovedEvent
+    | PlayerReasonedEvent
     | MoveBlockedEvent
     | TurnFailedEvent
     | GameEndedEvent,

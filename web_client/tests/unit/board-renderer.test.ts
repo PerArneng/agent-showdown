@@ -37,7 +37,7 @@ describe("BoardRenderer", () => {
     new BoardRenderer(canvas).render(
       state({
         board: { width: 10, height: 10 },
-        players: [{ name: "one", position: { x: 0, y: 0 }, color: "#fff" }],
+        players: [{ name: "one", position: { x: 0, y: 0 }, color: "#fff", reasoning: "" }],
       })
     );
 
@@ -52,7 +52,7 @@ describe("BoardRenderer", () => {
     new BoardRenderer(canvas).render(
       state({
         board: { width: 10, height: 10 },
-        players: [{ name: "one", position: { x: 1, y: 1 }, color: "#fff" }],
+        players: [{ name: "one", position: { x: 1, y: 1 }, color: "#fff", reasoning: "" }],
       })
     );
 

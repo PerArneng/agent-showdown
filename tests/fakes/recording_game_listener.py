@@ -21,6 +21,9 @@ class RecordingGameListener:
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self.events.append(("player_moved", (player.get_name(), source, destination)))
 
+    def player_reasoned(self, player: Player, reasoning: str) -> None:
+        self.events.append(("player_reasoned", (player.get_name(), reasoning)))
+
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         self.events.append(("move_blocked", (player.get_name(), position, direction)))
 

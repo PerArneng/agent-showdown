@@ -24,6 +24,9 @@ class LogGameListener:
             f"player {player.get_name()} moved from {_cell(source)} to {_cell(destination)}"
         )
 
+    def player_reasoned(self, player: Player, reasoning: str) -> None:
+        self._logger.info(f"player {player.get_name()} reasoned: {reasoning}")
+
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         self._logger.info(
             f"player {player.get_name()} blocked moving {direction} from {_cell(position)}"
