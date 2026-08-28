@@ -6,6 +6,7 @@ from agent_showdown.modules.game.default_game_factory import DefaultGameFactory
 from agent_showdown.modules.game.dummy_player import DummyPlayer
 from agent_showdown.modules.game.dummy_player_factory import DummyPlayerFactory
 from agent_showdown.modules.game.log_game_listener import LogGameListener
+from agent_showdown.modules.game.snapshot_game_listener import SnapshotGameListener
 
 __all__ = [
     "A2APlayer",
@@ -16,4 +17,5 @@ __all__ = [
     "DummyPlayer",
     "DummyPlayerFactory",
     "LogGameListener",
+    "SnapshotGameListener",
 ]

@@ -1,8 +1,9 @@
 from datetime import datetime
 
 from agent_showdown.container import Container
+from agent_showdown.interfaces.config import AppConfig
 from agent_showdown.interfaces.game import Direction, Move, Movement, PlayerTurn
-from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedTurnPlanner
+from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedAgentRoster
 
 _PLANNED = PlayerTurn(
     reasoning="walking the diagonal",
@@ -10,9 +11,9 @@ _PLANNED = PlayerTurn(
 )
 
 
-def _planner() -> ScriptedTurnPlanner:
+def _roster() -> ScriptedAgentRoster:
     """Stands in for the model, so the suite never opens a socket."""
-    return ScriptedTurnPlanner([_PLANNED])
+    return ScriptedAgentRoster(("simple-strands-1",), [_PLANNED])
 
 
 def _container(console: InMemoryConsole) -> Container:
@@ -20,7 +21,8 @@ def _container(console: InMemoryConsole) -> Container:
     container.clock.override(FrozenClock(datetime(2025, 9, 10)))
     container.console.override(console)
     container.randomizer.override(FixedRandomizer([3, 1]))
-    container.turn_planner.override(_planner())
+    container.config.override(AppConfig())
+    container.agent_roster.override(_roster())
     return container
 
 
@@ -36,7 +38,8 @@ def test_container_wires_a_working_engine() -> None:
 
 def test_providers_are_singletons() -> None:
     container = Container()
-    container.turn_planner.override(_planner())
+    container.config.override(AppConfig())
+    container.agent_roster.override(_roster())
     assert container.engine() is container.engine()
     assert container.logger() is container.logger()
     assert container.randomizer() is container.randomizer()

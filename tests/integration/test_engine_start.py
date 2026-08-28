@@ -1,16 +1,20 @@
 from datetime import datetime
 
-from agent_showdown.interfaces.game import Direction, Move, Movement, PlayerTurn
-from agent_showdown.modules.builtin_agents import SimpleStrandsPlayerFactory
+from agent_showdown.interfaces.game import Board, Direction, Move, Movement, PlayerTurn
 from agent_showdown.modules.engine import DefaultEngine
-from agent_showdown.modules.game import DefaultGameFactory, DummyPlayerFactory, LogGameListener
+from agent_showdown.modules.game import (
+    DefaultGameFactory,
+    DummyPlayerFactory,
+    LogGameListener,
+    SnapshotGameListener,
+)
 from agent_showdown.modules.log import AnsiLogFormatter, DefaultLogger
 from tests.fakes import (
     FixedRandomizer,
     FrozenClock,
     InMemoryConsole,
     RecordingGameListener,
-    ScriptedTurnPlanner,
+    ScriptedAgentRoster,
 )
 
 _INFO = "2025-09-10 \x1b[32mINFO\x1b[0m "
@@ -23,7 +27,15 @@ _PLANNED = PlayerTurn(
 )
 
 
-def _engine(console: InMemoryConsole, *extra_listeners: RecordingGameListener) -> DefaultEngine:
+_AGENT_NAMES = ("simple-strands-vllm", "simple-strands-lmstudio")
+
+
+def _engine(
+    console: InMemoryConsole,
+    *extra_listeners: RecordingGameListener,
+    snapshots: SnapshotGameListener | None = None,
+) -> DefaultEngine:
+    snapshot = snapshots if snapshots is not None else SnapshotGameListener()
     logger = DefaultLogger(
         clock=FrozenClock(datetime(2025, 9, 10)),
         formatter=AnsiLogFormatter(),
@@ -38,10 +50,9 @@ def _engine(console: InMemoryConsole, *extra_listeners: RecordingGameListener) -
             clock=FrozenClock(datetime(2025, 9, 10)),
             think_time=0.0,
         ),
-        agent_player_factory=SimpleStrandsPlayerFactory(
-            ScriptedTurnPlanner([_PLANNED]), max_moves=4
-        ),
-        game_listeners=[LogGameListener(logger), *extra_listeners],
+        agent_roster=ScriptedAgentRoster(_AGENT_NAMES, [_PLANNED]),
+        game_listeners=[LogGameListener(logger), *extra_listeners, snapshot],
+        snapshot_source=snapshot,
     )
 
 
@@ -51,10 +62,11 @@ def test_start_plays_a_whole_game_entirely_in_memory() -> None:
     _engine(console).start_game()
 
     # Players join at registration, which is why it precedes the game_started line.
-    assert console.lines[:4] == [
+    assert console.lines[:5] == [
         _INFO + "started",
         _INFO + "player dummy-1 joined at (0,0)",
-        _INFO + "player simple-strands-1 joined at (9,9)",
+        _INFO + "player simple-strands-vllm joined at (9,9)",
+        _INFO + "player simple-strands-lmstudio joined at (0,9)",
         _INFO + "game started on a 10x10 board for 10 rounds",
     ]
     assert console.lines[-1] == _INFO + "game ended after 10 rounds"
@@ -81,8 +93,29 @@ def test_every_registered_listener_sees_the_game() -> None:
 
     _engine(console, recorder).start_game()
 
-    assert recorder.names()[:3] == ["player_joined", "player_joined", "game_started"]
+    assert recorder.names()[:4] == [
+        "player_joined",
+        "player_joined",
+        "player_joined",
+        "game_started",
+    ]
     assert recorder.names().count("round_started") == 10
     assert recorder.names()[-1] == "game_ended"
     logged_moves = sum("moved" in line for line in console.lines)
     assert logged_moves == recorder.names().count("player_moved")
+
+
+def test_the_snapshot_catches_a_late_client_up_on_the_whole_game() -> None:
+    snapshots = SnapshotGameListener()
+
+    _engine(InMemoryConsole(), snapshots=snapshots).start_game()
+
+    snapshot = snapshots.snapshot()
+    assert snapshot.board == Board(width=10, height=10)
+    assert snapshot.max_rounds == 10
+    assert snapshot.round_number == 10
+    assert snapshot.playing is False  # the game is over, so nothing is in flight
+    assert sorted(player.name for player in snapshot.players) == [
+        "dummy-1",
+        *sorted(_AGENT_NAMES),
+    ]

@@ -1,6 +1,7 @@
 import type {
   ClientState,
   GameEvent,
+  GameSnapshot,
   PlayerState,
   Position,
   SpritePicker,
@@ -22,6 +23,25 @@ export class DefaultStateReducer implements StateReducer {
 
   initial(): ClientState {
     return { board: null, players: [], status: "Waiting.", playing: false };
+  }
+
+  catchUp(state: ClientState, snapshot: GameSnapshot): ClientState {
+    // Gaps only. The stream is live and the snapshot was taken before it was asked for, so
+    // anything the events already told us is the fresher truth and stays.
+    const board = state.board ?? snapshot.board;
+    const players = snapshot.players.reduce(
+      (known: ClientState, player) =>
+        known.players.some((seen) => seen.name === player.name)
+          ? known
+          : {
+              ...known,
+              players: this.introduce(known, player.name, player.position, player.reasoning),
+            },
+      state,
+    ).players;
+    const status =
+      state.playing || !snapshot.playing ? state.status : `Round ${snapshot.round_number}.`;
+    return { ...state, board, players, status };
   }
 
   reduce(state: ClientState, event: GameEvent): ClientState {
@@ -55,22 +75,12 @@ export class DefaultStateReducer implements StateReducer {
     if (known !== undefined) {
       return this.moved(state, name, position);
     }
-    const color = this.palette.colorFor(state.players.length);
-    const sprite = this.spritePicker.pick(
-      name,
-      state.players.map((player) => player.sprite),
-    );
-    return [...state.players, { name, position, color, sprite, reasoning: "" }];
+    return this.introduce(state, name, position, "");
   }
 
   private moved(state: ClientState, name: string, position: Position): readonly PlayerState[] {
     if (!state.players.some((player) => player.name === name)) {
-      const color = this.palette.colorFor(state.players.length);
-      const sprite = this.spritePicker.pick(
-        name,
-        state.players.map((player) => player.sprite),
-      );
-      return [...state.players, { name, position, color, sprite, reasoning: "" }];
+      return this.introduce(state, name, position, "");
     }
     return state.players.map((player) => (player.name === name ? { ...player, position } : player));
   }
@@ -78,24 +88,25 @@ export class DefaultStateReducer implements StateReducer {
   private reasoned(state: ClientState, name: string, reasoning: string): readonly PlayerState[] {
     // A client that connected mid-game may hear a player think before it sees it move.
     if (!state.players.some((player) => player.name === name)) {
-      const color = this.palette.colorFor(state.players.length);
-      const sprite = this.spritePicker.pick(
-        name,
-        state.players.map((player) => player.sprite),
-      );
-      return [
-        ...state.players,
-        {
-          name,
-          position: { x: 0, y: 0 },
-          color,
-          sprite,
-          reasoning,
-        },
-      ];
+      return this.introduce(state, name, { x: 0, y: 0 }, reasoning);
     }
     return state.players.map((player) =>
       player.name === name ? { ...player, reasoning } : player,
     );
+  }
+
+  /** A player the client has not seen before, given the next color and a free sprite. */
+  private introduce(
+    state: ClientState,
+    name: string,
+    position: Position,
+    reasoning: string,
+  ): readonly PlayerState[] {
+    const color = this.palette.colorFor(state.players.length);
+    const sprite = this.spritePicker.pick(
+      name,
+      state.players.map((player) => player.sprite),
+    );
+    return [...state.players, { name, position, color, sprite, reasoning }];
   }
 }

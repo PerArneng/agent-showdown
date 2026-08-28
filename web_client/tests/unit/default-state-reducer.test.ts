@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ClientState } from "../../src/interfaces/game/index.js";
+import type { ClientState, GameSnapshot } from "../../src/interfaces/game/index.js";
 import { DefaultStateReducer, HashSpritePicker, Palette } from "../../src/modules/game/index.js";
 
 const reducer = new DefaultStateReducer(new Palette(), new HashSpritePicker());
@@ -152,5 +152,81 @@ describe("DefaultStateReducer", () => {
     });
 
     expect(before).toEqual(snapshot);
+  });
+
+  describe("catchUp", () => {
+    const midGame: GameSnapshot = {
+      board: { width: 10, height: 10 },
+      max_rounds: 10,
+      round_number: 4,
+      playing: true,
+      players: [
+        { name: "one", position: { x: 1, y: 2 }, reasoning: "heading for the middle" },
+        { name: "two", position: { x: 9, y: 9 }, reasoning: "" },
+      ],
+    };
+
+    it("gives a late client the board it never heard about", () => {
+      const state = reducer.catchUp(empty, midGame);
+
+      expect(state.board).toEqual({ width: 10, height: 10 });
+      expect(state.status).toBe("Round 4.");
+    });
+
+    it("brings the players it missed, with their positions and last plan", () => {
+      const state = reducer.catchUp(empty, midGame);
+
+      expect(state.players.map((player) => player.name)).toEqual(["one", "two"]);
+      expect(state.players[0]?.position).toEqual({ x: 1, y: 2 });
+      expect(state.players[0]?.reasoning).toBe("heading for the middle");
+      expect(state.players[0]?.color).not.toBe(state.players[1]?.color);
+      expect(state.players[0]?.sprite).not.toBe(state.players[1]?.sprite);
+    });
+
+    it("never overwrites what the live stream already said", () => {
+      // The snapshot was taken before it was asked for, so an event that arrived meanwhile wins.
+      const live = after(empty, {
+        type: "player_moved",
+        player: "one",
+        source: { x: 1, y: 2 },
+        destination: { x: 5, y: 5 },
+      });
+
+      const state = reducer.catchUp(live, midGame);
+
+      expect(state.players.find((player) => player.name === "one")?.position).toEqual({
+        x: 5,
+        y: 5,
+      });
+      expect(state.players.map((player) => player.name)).toEqual(["one", "two"]);
+    });
+
+    it("leaves a board the stream already delivered alone", () => {
+      const live = after(empty, {
+        type: "game_started",
+        board: { width: 3, height: 3 },
+        max_rounds: 2,
+      });
+
+      expect(reducer.catchUp(live, midGame).board).toEqual({ width: 3, height: 3 });
+    });
+
+    it("keeps the live status once a round has been heard", () => {
+      const live = after(empty, { type: "round_started", round_number: 7 });
+
+      expect(reducer.catchUp(live, midGame).status).toBe("Round 7.");
+    });
+
+    it("changes nothing when there is no game to catch up on", () => {
+      const nothing: GameSnapshot = {
+        board: null,
+        max_rounds: 0,
+        round_number: 0,
+        playing: false,
+        players: [],
+      };
+
+      expect(reducer.catchUp(empty, nothing)).toEqual(empty);
+    });
   });
 });

@@ -38,10 +38,20 @@ export class DefaultEngine implements Engine {
     this.startButton.onClick(() => this.startGame());
     this.show(this.state);
     this.connectionIndicator.show(false);
+    // Subscribe first, so no event can slip past while the snapshot is in flight; the snapshot
+    // then fills only what the stream has not already told us.
     this.stream.subscribe(
       (event) => this.handle(event),
       (connected) => this.connectionIndicator.show(connected),
     );
+    void this.catchUp();
+  }
+
+  /** Recover a game already in progress: the stream has no replay, so the board is fetched. */
+  private async catchUp(): Promise<void> {
+    const snapshot = await this.api.fetchSnapshot();
+    this.show(this.reducer.catchUp(this.state, snapshot));
+    this.startButton.setEnabled(!snapshot.playing);
   }
 
   startGame(): void {

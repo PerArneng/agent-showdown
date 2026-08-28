@@ -1,7 +1,10 @@
+from typing import Any
+
 from strands import Agent
 from strands.models.openai import OpenAIModel
 
 from agent_showdown.interfaces.agent_client import AgentClientError
+from agent_showdown.interfaces.config import AgentConfig
 from agent_showdown.interfaces.game import PlayerTurn
 
 _SYSTEM_PROMPT = (
@@ -11,40 +14,43 @@ _SYSTEM_PROMPT = (
 )
 
 
+# Turning thinking off is not one field: vLLM honours the Qwen chat-template switch and
+# ignores `reasoning_effort`, while LM Studio does exactly the reverse. Both ignore the
+# other's field silently, so sending both is what makes one flag work on either server.
+_NO_THINKING: dict[str, Any] = {
+    "reasoning_effort": "none",
+    "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},
+}
+
+
 class StrandsTurnPlanner:
-    """Edge module. The only place a model is called over the network.
+    """Asks a model for a turn. The only thing in the process that opens a socket."""
 
-    A fresh `Agent` per turn: the contestant is stateless by design, and a system prompt that never
-    varies is exactly what the server's prefix cache keys on.
-    """
-
-    def __init__(
-        self,
-        base_url: str,
-        api_key: str,
-        model_id: str,
-        max_tokens: int,
-        timeout: float,
-    ) -> None:
+    def __init__(self, config: AgentConfig) -> None:
+        params: dict[str, Any] = {"max_tokens": config.max_tokens}
+        if not config.thinking:
+            params.update(_NO_THINKING)
         self._model = OpenAIModel(
-            client_args={"base_url": base_url, "api_key": api_key, "timeout": timeout},
-            model_id=model_id,
-            # A reasoning model spends this budget on thinking first. Too small and the answer
-            # never arrives.
-            params={"max_tokens": max_tokens},
+            client_args={
+                "base_url": config.base_url,
+                "api_key": config.api_key,
+                "timeout": config.timeout,
+            },
+            model_id=config.model_id,
+            params=params,
         )
 
     def plan(self, prompt: str) -> PlayerTurn:
         try:
+            # A fresh agent per turn: the contestant is stateless, and an unchanging system
+            # prompt is what a prefix cache keys on.
             agent = Agent(
                 model=self._model,
                 system_prompt=_SYSTEM_PROMPT,
-                # Strands prints the model's thinking to stdout by default, which would
-                # trample the terminal log. The console is the logger's, not the SDK's.
-                callback_handler=None,
+                callback_handler=None,  # keeps strands from printing thinking to stdout
             )
             result = agent(prompt, structured_output_model=PlayerTurn)
-        except Exception as error:  # A model behind a network fails in ways we cannot enumerate.
+        except Exception as error:
             raise AgentClientError(f"{type(error).__name__}: {error}") from error
         turn = result.structured_output
         if not isinstance(turn, PlayerTurn):

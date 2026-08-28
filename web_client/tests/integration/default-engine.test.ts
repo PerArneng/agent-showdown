@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import demoGame from "../../fixtures/demo-game.json" with { type: "json" };
-import type { GameEvent } from "../../src/interfaces/game/index.js";
+import type { GameEvent, GameSnapshot } from "../../src/interfaces/game/index.js";
 import { DefaultEngine } from "../../src/modules/engine/index.js";
 import {
   BoardRenderer,
@@ -21,14 +21,18 @@ import {
 /** The whole client, wired as `container.ts` wires it, with fakes at every edge. No DOM. */
 class Fixture {
   readonly canvas = new RecordingCanvas(100, 100);
-  readonly api = new RecordingGameApi();
+  readonly api: RecordingGameApi;
   readonly playerList = new InMemoryPlayerList();
   readonly statusText = new InMemoryStatusText();
   readonly startButton = new InMemoryStartButton();
   readonly connectionIndicator = new InMemoryConnectionIndicator();
   readonly engine: DefaultEngine;
 
-  constructor(readonly stream: ScriptedEventStream) {
+  constructor(
+    readonly stream: ScriptedEventStream,
+    snapshot?: GameSnapshot,
+  ) {
+    this.api = new RecordingGameApi(snapshot);
     this.engine = new DefaultEngine(
       stream,
       this.api,
@@ -127,5 +131,47 @@ describe("DefaultEngine", () => {
 
     stream.setConnected(true);
     expect(fixture.connectionIndicator.last()).toBe(true);
+  });
+
+  describe("connecting to a game already in progress", () => {
+    const midGame: GameSnapshot = {
+      board: { width: 10, height: 10 },
+      max_rounds: 10,
+      round_number: 4,
+      playing: true,
+      players: [{ name: "one", position: { x: 1, y: 2 }, reasoning: "heading for the middle" }],
+    };
+
+    it("draws the board it never heard game_started for", async () => {
+      const fixture = new Fixture(new ScriptedEventStream([]), midGame);
+
+      fixture.engine.connect();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(fixture.api.snapshots).toBe(1);
+      expect(fixture.canvas.calls.length).toBeGreaterThan(0);
+      expect(fixture.playerList.shown.map((player) => player.name)).toEqual(["one"]);
+    });
+
+    it("leaves the start button disabled while that game is still running", async () => {
+      const fixture = new Fixture(new ScriptedEventStream([]), midGame);
+
+      fixture.engine.connect();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(fixture.startButton.enabled).toBe(false);
+    });
+
+    it("keeps the button usable when nothing is playing", async () => {
+      const fixture = new Fixture(new ScriptedEventStream([]));
+
+      fixture.engine.connect();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(fixture.startButton.enabled).toBe(true);
+    });
   });
 });

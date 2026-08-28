@@ -4,6 +4,7 @@ from typing import Annotated
 import typer
 
 from agent_showdown.container import Container
+from agent_showdown.modules.config import DEFAULT_CONFIG_PATH
 from agent_showdown.web import WebServer, create_app, find_client_dir
 from agent_showdown.web.client_dir import BUILD_COMMAND
 
@@ -26,10 +27,22 @@ def start(
         Path | None,
         typer.Option(help="Directory holding the built web client. Found by default."),
     ] = None,
+    config: Annotated[
+        Path | None,
+        typer.Option(
+            help=f"Agent configuration. Defaults to ./{DEFAULT_CONFIG_PATH} when it exists."
+        ),
+    ] = None,
 ) -> None:
     """Serve the web client. Games are started from the browser."""
     container = Container()  # Composition root. The only place the container is instantiated.
     logger = container.logger()
+    try:
+        # Two steps, because loading the config needs the container's file system.
+        container.config.override(container.config_loader().load(config))
+    except (FileNotFoundError, ValueError) as error:
+        logger.error(str(error))
+        raise typer.Exit(code=1) from error
     resolved = find_client_dir(container.file_system(), client_dir)
     if resolved is None:
         logger.error(f"the web client is not built. Run: {BUILD_COMMAND}")

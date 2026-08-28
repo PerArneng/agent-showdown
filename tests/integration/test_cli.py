@@ -7,8 +7,9 @@ from typer.testing import CliRunner, Result
 
 from agent_showdown.cli import main as cli_main
 from agent_showdown.container import Container
+from agent_showdown.interfaces.config import AppConfig
 from agent_showdown.interfaces.game import Direction, Move, Movement, PlayerTurn
-from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedTurnPlanner
+from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedAgentRoster
 
 runner = CliRunner()
 
@@ -81,10 +82,13 @@ def test_the_container_still_plays_a_game() -> None:
     container.clock.override(FrozenClock(datetime(2025, 9, 10)))
     container.console.override(console)
     container.randomizer.override(FixedRandomizer([3, 1]))
+    container.config.override(AppConfig())
     # Stands in for the model, so the suite never opens a socket.
-    container.turn_planner.override(
-        ScriptedTurnPlanner(
-            [PlayerTurn(reasoning="", movement=Movement(moves=(Move(direction=Direction.UP),)))]
+    container.agent_roster.override(
+        ScriptedAgentRoster(
+            turns=[
+                PlayerTurn(reasoning="", movement=Movement(moves=(Move(direction=Direction.UP),)))
+            ]
         )
     )
 
@@ -102,6 +106,49 @@ def test_start_refuses_when_the_client_is_not_built(
     assert "not built" in result.stdout
     assert "npm --prefix web_client run build" in result.stdout
     assert server.calls == []
+
+
+def test_start_refuses_a_config_path_that_does_not_exist(
+    server: RecordingServer, client_dir: Path, tmp_path: Path
+) -> None:
+    result = _start(client_dir, "--config", str(tmp_path / "absent.yaml"))
+
+    assert result.exit_code == 1
+    assert "no config file at" in result.stdout
+    assert server.calls == []
+
+
+def test_start_refuses_a_config_it_cannot_parse(
+    server: RecordingServer, client_dir: Path, tmp_path: Path
+) -> None:
+    broken = tmp_path / "broken.yaml"
+    broken.write_text("agents:\n  - name: a\n    tokens: 3\n")
+
+    result = _start(client_dir, "--config", str(broken))
+
+    assert result.exit_code == 1
+    assert "not a valid config" in result.stdout
+    assert server.calls == []
+
+
+def test_start_accepts_a_config_naming_its_own_agents(
+    server: RecordingServer, client_dir: Path, tmp_path: Path
+) -> None:
+    config = tmp_path / "showdown.yaml"
+    config.write_text(
+        "agents:\n  - name: local\n    base_url: http://localhost:1234/v1\n"
+        "    model_id: qwen/qwen3.8-27b\n"
+    )
+
+    result = _start(client_dir, "--config", str(config))
+
+    assert result.exit_code == 0
+    assert len(server.calls) == 1
+
+
+def test_help_documents_the_config_flag() -> None:
+    result = runner.invoke(cli_main.app, ["start", "--help"])
+    assert "--config" in result.stdout
 
 
 def test_help_documents_the_client_dir_flag() -> None:

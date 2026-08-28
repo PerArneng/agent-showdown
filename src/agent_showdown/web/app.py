@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from agent_showdown.interfaces.engine import Engine
 from agent_showdown.interfaces.event_channel import EventChannel, EventSubscription
 from agent_showdown.interfaces.file_system import FileSystem
+from agent_showdown.interfaces.game import GameSnapshot
 
 # How long a reader waits before emitting a comment line. Keeps an idle stream alive, and bounds
 # how long the loop can go without noticing the server is shutting down.
@@ -35,6 +36,12 @@ def create_app(
         # begins. The engine refuses a second concurrent game itself.
         background_tasks.add_task(engine.start_game)
         return Response(status_code=202)
+
+    @app.get("/api/state")
+    def game_state() -> GameSnapshot:
+        # The event stream has no replay, so this is how a client that connected mid-game — or
+        # reconnected after one — learns the board it is drawing on.
+        return engine.game_snapshot()
 
     @app.get("/api/events")
     async def events() -> StreamingResponse:

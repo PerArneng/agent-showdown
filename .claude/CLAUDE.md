@@ -10,7 +10,7 @@ TypeScript project in `web_client/` and **must be built first** — it has its o
 - `interfaces/` holds Protocols and frozen Pydantic models only — no behaviour, and it never imports
   from `modules/` or `cli/`. `modules/` holds the implementations under the same domain names.
 - Domains today: `clock`, `console`, `file_system`, `randomizer`, `event_channel`, `log`,
-  `game`, `agent_client`, `builtin_agents`, `engine`. Read the real contracts in
+  `game`, `agent_client`, `builtin_agents`, `config`, `engine`. Read the real contracts in
   `src/agent_showdown/interfaces/`.
 - Two frontends, both thin adapters over `Engine`: `cli/` and `web/`. `cli/` builds the
   container and hands the pieces to `web.create_app`; nothing else may import `Container`.
@@ -128,14 +128,54 @@ One sub-package per agent, named after it: `simple_strands/` today.
   prompt and hands it to a `TurnPlanner`. `StrandsTurnPlanner` is the only thing that imports
   `strands` or opens a socket, which is what keeps the player unit-testable in memory and the
   suite free of npm-style network flakiness. **No test may reach a real model**: override
-  `container.turn_planner` with `ScriptedTurnPlanner`, or the suite hangs on a DNS lookup.
+  `container.agent_roster` with `ScriptedAgentRoster`, or the suite hangs on a DNS lookup.
+- **`AgentRoster` is the unit the engine sees, not a `PlayerFactory`.** `SimpleStrandsRoster` takes
+  a list of `AgentConfig`s and builds one `StrandsTurnPlanner` and one player per entry, so the
+  same code plays several models at once — a vLLM box and a local LM Studio side by side. Each
+  contestant names itself from its own config, which is why the roster replaced
+  `SimpleStrandsPlayerFactory`: a factory that is handed a name cannot carry per-agent config.
+- Constructing a `StrandsTurnPlanner` builds an `OpenAIModel` and opens no socket, so a roster may
+  be constructed in a unit test as long as `plan()` is never called.
 - A planner failure raises `AgentClientError` — the same contract a remote agent already uses, and
-  `DefaultGame`'s trust boundary turns it into `turn_failed` either way.
+  `DefaultGame`'s trust boundary turns it into `turn_failed` either way. One unreachable endpoint
+  therefore costs its own contestant its turns and leaves the rest of the game running.
 - **A fresh `Agent` per turn.** The contestant is stateless by design, and an unchanging system
   prompt is what a vLLM prefix cache keys on. Reasoning tokens are spent out of `max_tokens`
   before any answer arrives, so budget it generously and set a timeout in the hundreds of seconds.
-- `max_moves` on the factory is what the *prompt* asks for; `_MAX_MOVES_PER_TURN` in `DefaultGame`
+- `max_moves` on the config is what the *prompt* asks for; `_MAX_MOVES_PER_TURN` in `DefaultGame`
   is what the *rules* allow. Set the first below the second, or every turn is refused whole.
+- **`thinking: false` is worth minutes per turn**, and it is *two* wire fields, not one:
+  `_NO_THINKING` in `StrandsTurnPlanner` sends both `reasoning_effort: "none"` and
+  `extra_body.chat_template_kwargs.enable_thinking: false`. Measured against both boxes:
+  vLLM honours the chat-template switch and ignores `reasoning_effort`; LM Studio does exactly
+  the reverse and also ignores a `/no_think` suffix. Each silently ignores the other's field,
+  which is what lets one config flag work on either. Do not "simplify" this to one field
+  without re-measuring against both servers.
+- `params` on `OpenAIModel` is spread straight into `client.chat.completions.create(**request)`
+  by strands, so `extra_body` reaches the server as top-level JSON. That is the seam for any
+  future server-specific knob.
+- `_AGENT_SEATS` in `DefaultEngine` is where the agents sit down, cycled — more agents than seats
+  still starts a game, they just share corners.
+
+## Configuration
+
+`interfaces/config/` holds `AgentConfig` (name plus one OpenAI-compatible endpoint and its
+budgets) and `AppConfig` (`agents: tuple[AgentConfig, ...]`). `YamlConfigLoader` reads them from
+`agent-showdown.yaml`.
+
+- **The defaults are in the models, so no file is needed.** A missing default path yields
+  `AppConfig()` and the run still fields both built-in agents. A path named explicitly with
+  `--config` that does not exist is an error instead — a wrong flag must not look like success.
+- Both models are `extra="forbid"`, unlike every other frozen model here. They are filled from a
+  hand-written file, so a typo'd key must fail loudly rather than leave a default in place.
+- **Reading goes through the `file_system` edge module**, and `yaml.safe_load` runs on the string
+  it returns — the no-`open()` rule holds and `InMemoryFileSystem` covers the loader in tests.
+- **`container.config` is a `providers.Dependency`, resolved in two steps by the composition
+  root**: loading the config needs `file_system`, which only exists once the container is built.
+  So `cli/main.py` does `container.config.override(container.config_loader().load(config))`.
+  `Dependency.override` wraps a plain value itself, which is why `cli/` still never imports
+  `providers`. Any test that builds a `Container` must override `config` too, or `agent_roster`
+  cannot resolve.
 
 ## Serving the web client
 
@@ -156,6 +196,18 @@ Python side finds and serves what that project builds.
   It is read per request, which is why `npm run dev` needs no server restart.
 - **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only thing
   the browser sends.
+- **`GET /api/state` is the stream's missing half.** The event stream has no replay, so a browser
+  that connects mid-game — or reloads during one — never hears `game_started` and has no board to
+  draw. `SnapshotGameListener` keeps the game as a `GameSnapshot`, the engine hands it out through
+  `SnapshotSource`, and the client folds it in with `reduce.catchUp`. It is a *listener*, so it
+  stays in step with the stream for free: adding a `GameListener` method means deciding what it
+  does to the snapshot too.
+- **The snapshot has no lock, deliberately.** The game thread writes and HTTP threads read, but
+  every write replaces the frozen snapshot rather than mutating it, and rebinding one attribute is
+  atomic — a reader sees the old value or the new one, never a half-built board. Mutating it in
+  place would need a lock and would break the rule that concurrency lives in three places.
+- **The client subscribes before it fetches.** Otherwise an event arriving during the fetch is
+  lost. `catchUp` therefore fills gaps only: the live stream is fresher and always wins.
 - `GET /api/events` is endless by design — one connection outlives many games. It polls the
   channel with a timeout and emits `: ping` when idle, which is also how it notices the reader
   is gone. Do not try to read it with `TestClient`; drive `stream_events` directly instead.
@@ -167,6 +219,7 @@ Python side finds and serves what that project builds.
   answers 202. The refusal shows up as a log line, not a status code.
 - **Events must stay in step across the two projects.** A new `GameListener` method needs its
   Python event model *and* the matching variant in `web_client/src/interfaces/game/game-event.ts`.
+  `GameSnapshot` mirrors the same way, in `web_client/src/interfaces/game/game-snapshot.ts`.
 
 ## Gotchas
 
@@ -186,7 +239,7 @@ uv sync                        # install
 uv run pytest                  # test
 uv run mypy src tests          # types
 uv run ruff check src tests    # lint
-uv run agent-showdown start    # serve on 8066 (--port, --client-dir)
+uv run agent-showdown start    # serve on 8066 (--port, --client-dir, --config)
 ```
 
 The client is built separately, and the server has nothing to serve until it is:
@@ -199,9 +252,9 @@ npm --prefix web_client test        # vitest, no browser
 npm --prefix web_client run check   # tsc --noEmit
 ```
 
-Runtime deps: `typer`, `dependency-injector`, `pydantic`, `fastapi`, `uvicorn`,
+Runtime deps: `typer`, `dependency-injector`, `pydantic`, `pyyaml`, `fastapi`, `uvicorn`,
 `strands-agents[openai]`.
-Dev: `pytest`, `mypy`, `ruff`, `httpx`.
+Dev: `pytest`, `mypy`, `ruff`, `httpx`, `types-PyYAML`.
 Python >= 3.11. The client's dependencies are all dev-only and live in `web_client/`.
 
 Packaging: `web_client/dist` is force-included into the wheel as `agent_showdown/web/static`,

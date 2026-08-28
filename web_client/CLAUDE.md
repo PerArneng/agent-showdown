@@ -45,10 +45,26 @@ this is the frozen-model rule, and it is what stops the screen drifting from wha
 `reduce(state, event) -> ClientState` is the whole client's logic, and it is pure: no DOM, no
 canvas, no time, no randomness. Anything worth testing belongs there rather than in a view.
 
+## Catching up
+
+`GET /api/events` has no replay, so a client that connects mid-game — or reloads during one —
+never hears `game_started` and has nothing to draw. `GameApi.fetchSnapshot()` fetches
+`/api/state` and `reduce.catchUp(state, snapshot)` folds it in.
+
+- **Subscribe first, then fetch.** `DefaultEngine.connect` opens the stream before asking for the
+  snapshot, so no event can slip past while the request is in flight.
+- **`catchUp` fills gaps only.** The snapshot was taken before it was asked for, so anything the
+  live stream already delivered is fresher and wins — the board is kept if set, and a player the
+  events introduced is never replaced. That is what makes the ordering above safe.
+- It is on `StateReducer` rather than in the engine because it is state folding, and belongs where
+  everything else worth testing lives.
+
 ## Events
 
 `src/interfaces/game/game-event.ts` mirrors `interfaces/game/*_event.py`, discriminated on `type`.
 
+- `game-snapshot.ts` mirrors `interfaces/game/game_snapshot.py` the same way, and drifts the
+  same way if only one side is changed.
 - Adding a listener method on the Python side means adding the variant here too. `tsc` will then
   point at the `switch` in `DefaultStateReducer` that no longer covers every case — the exhaustive
   switch is deliberate, so do not add a `default` branch to silence it.

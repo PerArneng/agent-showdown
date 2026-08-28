@@ -17,7 +17,6 @@ from agent_showdown.interfaces.game import (
     PlayerTurn,
     RoundStartedEvent,
 )
-from agent_showdown.modules.builtin_agents import SimpleStrandsPlayerFactory
 from agent_showdown.modules.engine import DefaultEngine
 from agent_showdown.modules.event_channel import QueueEventChannel
 from agent_showdown.modules.game import (
@@ -25,6 +24,7 @@ from agent_showdown.modules.game import (
     DefaultGameFactory,
     DummyPlayerFactory,
     LogGameListener,
+    SnapshotGameListener,
 )
 from agent_showdown.modules.log import AnsiLogFormatter, DefaultLogger
 from agent_showdown.web import create_app, stream_events
@@ -34,8 +34,8 @@ from tests.fakes import (
     InMemoryConsole,
     InMemoryFileSystem,
     RecordingGameListener,
+    ScriptedAgentRoster,
     ScriptedEventSubscription,
-    ScriptedTurnPlanner,
 )
 
 _CLIENT_DIR = Path("/app/dist")
@@ -69,6 +69,7 @@ class Fixture:
             clock=self.clock, formatter=AnsiLogFormatter(), console=self.console
         )
         self.stopping = False
+        self.snapshots = SnapshotGameListener()
         self.file_system = file_system = InMemoryFileSystem()
         file_system.write_text(_CLIENT_DIR / "index.html", _PAGE)
         self.engine = self.build_engine([ChannelGameListener(self.channel)])
@@ -89,11 +90,9 @@ class Fixture:
             player_factory=DummyPlayerFactory(
                 randomizer=FixedRandomizer([3, 1]), clock=self.clock, think_time=0.0
             ),
-            agent_player_factory=SimpleStrandsPlayerFactory(
-                ScriptedTurnPlanner([_PLANNED]),
-                max_moves=4,
-            ),
-            game_listeners=[LogGameListener(self.logger), *extra_listeners],
+            agent_roster=ScriptedAgentRoster(turns=[_PLANNED]),
+            game_listeners=[LogGameListener(self.logger), *extra_listeners, self.snapshots],
+            snapshot_source=self.snapshots,
         )
 
 
@@ -216,3 +215,26 @@ class ReentrantListener:
     def move_blocked(self, player: object, position: object, direction: object) -> None: ...
     def turn_failed(self, player: object, reason: str) -> None: ...
     def game_ended(self, rounds_played: int) -> None: ...
+
+
+def test_the_state_route_answers_before_any_game(app: Fixture) -> None:
+    body = app.client.get("/api/state").json()
+
+    assert body["board"] is None
+    assert body["players"] == []
+    assert body["playing"] is False
+
+
+def test_the_state_route_describes_the_game_that_was_played(app: Fixture) -> None:
+    app.client.post("/api/start")
+
+    body = app.client.get("/api/state").json()
+
+    # This is what a browser that connected mid-game needs and the stream never repeats.
+    assert body["board"] == {"width": 10, "height": 10}
+    assert body["max_rounds"] == 10
+    assert {player["name"] for player in body["players"]} == {
+        "dummy-1",
+        "simple-strands-1",
+    }
+    assert all("position" in player for player in body["players"])

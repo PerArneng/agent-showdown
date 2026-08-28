@@ -1,0 +1,26 @@
+# Built-in contestants. Every entry becomes its own strands agent talking to its own
+# OpenAI-compatible endpoint, so the same code can play against several models at once.
+# Delete this file to fall back to these very defaults.
+#
+# thinking: false is the difference between a turn that takes minutes and one that takes
+# seconds. It is sent as both the Qwen chat-template switch and `reasoning_effort`, because
+# vLLM honours the first and LM Studio the second.
+#
+# max_tokens is the *output* budget, not the context window. With thinking off the answer is
+# under 100 tokens; the budget only matters when thinking is on.
+agents:
+  - name: simple-strands-vllm
+    base_url: http://vllm.brain.home.arpa/v1
+    model_id: qwen3.6-35b
+    thinking: false
+    max_tokens: 16384
+    timeout: 300.0
+    # api_key: EMPTY    # servers that want no auth still need a value here
+    # max_moves: 4      # what the prompt asks for; the rules cap a turn at 8
+
+  - name: simple-strands-lmstudio
+    base_url: http://localhost:1234/v1
+    model_id: qwen/qwen3.8-27b
+    thinking: false
+    max_tokens: 16384
+    timeout: 300.0

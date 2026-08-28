@@ -1,3 +1,4 @@
+from agent_showdown.interfaces.builtin_agents.agent_roster import AgentRoster
 from agent_showdown.interfaces.builtin_agents.turn_planner import TurnPlanner
 
-__all__ = ["TurnPlanner"]
+__all__ = ["AgentRoster", "TurnPlanner"]

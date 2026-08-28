@@ -10,7 +10,7 @@ from agent_showdown.interfaces.game import (
     PlayerTurn,
     Position,
 )
-from agent_showdown.modules.builtin_agents import SimpleStrandsPlayer, SimpleStrandsPlayerFactory
+from agent_showdown.modules.builtin_agents import SimpleStrandsPlayer
 from tests.fakes import ScriptedTurnPlanner
 
 _VIEW = GameView(
@@ -67,16 +67,3 @@ def test_a_planner_failure_propagates_to_the_game() -> None:
 
     with pytest.raises(AgentClientError):
         player.take_turn(_VIEW)
-
-
-def test_the_factory_builds_players_sharing_one_planner() -> None:
-    planner = ScriptedTurnPlanner([_TURN])
-    factory = SimpleStrandsPlayerFactory(planner, max_moves=4)
-
-    first = factory.create("agent-1")
-    second = factory.create("agent-2")
-    first.take_turn(_VIEW)
-    second.take_turn(_VIEW)
-
-    assert (first.get_name(), second.get_name()) == ("agent-1", "agent-2")
-    assert len(planner.prompts) == 2

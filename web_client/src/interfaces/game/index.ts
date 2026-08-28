@@ -11,6 +11,7 @@ export type {
   RoundStartedEvent,
   TurnFailedEvent,
 } from "./game-event.js";
+export type { GameSnapshot, PlayerSnapshot } from "./game-snapshot.js";
 export type { PlayerState } from "./player-state.js";
 export type { Position } from "./position.js";
 export type { Renderer } from "./renderer.js";
