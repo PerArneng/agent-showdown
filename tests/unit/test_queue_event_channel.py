@@ -63,3 +63,13 @@ def test_closing_twice_is_harmless() -> None:
 
 def test_publishing_with_no_subscribers_is_harmless() -> None:
     QueueEventChannel().publish(GameEndedEvent(rounds_played=10))
+
+
+def test_a_subscription_exposes_nothing_beyond_its_contract() -> None:
+    # The channel used to fill the queue by calling a public `offer` that no Protocol declared,
+    # which meant nothing could stand in for the subscription.
+    subscription = QueueEventChannel().subscribe()
+
+    surface = {name for name in dir(subscription) if not name.startswith("_")}
+
+    assert surface == {"poll", "close"}

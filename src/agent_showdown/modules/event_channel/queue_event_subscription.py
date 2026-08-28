@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import queue
 from collections.abc import Callable
 
@@ -7,21 +5,20 @@ from agent_showdown.interfaces.game import GameEvent
 
 
 class QueueEventSubscription:
-    """Edge module. One reader's queue, and the blocking wait that feeds it."""
+    """Edge module. One reader's queue, and the blocking wait on it.
 
-    def __init__(self, on_close: Callable[[QueueEventSubscription], None]) -> None:
-        self._queue: queue.Queue[GameEvent] = queue.Queue()
+    Its public surface is exactly `EventSubscription`: the channel fills the queue, and nothing
+    reaches in here to do it.
+    """
+
+    def __init__(self, events: queue.Queue[GameEvent], on_close: Callable[[], None]) -> None:
+        self._events = events
         self._on_close = on_close
         self._closed = False
 
-    def offer(self, event: GameEvent) -> None:
-        """Called by the channel. Dropped silently once closed."""
-        if not self._closed:
-            self._queue.put(event)
-
     def poll(self, timeout_seconds: float) -> GameEvent | None:
         try:
-            return self._queue.get(timeout=timeout_seconds)
+            return self._events.get(timeout=timeout_seconds)
         except queue.Empty:
             return None
 
@@ -29,4 +26,4 @@ class QueueEventSubscription:
         if self._closed:
             return
         self._closed = True
-        self._on_close(self)
+        self._on_close()

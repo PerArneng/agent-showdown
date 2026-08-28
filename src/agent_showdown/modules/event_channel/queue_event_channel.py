@@ -1,3 +1,4 @@
+import queue
 import threading
 
 from agent_showdown.interfaces.game import GameEvent
@@ -7,27 +8,27 @@ from agent_showdown.modules.event_channel.queue_event_subscription import QueueE
 class QueueEventChannel:
     """Edge module. Where the thread playing the game meets the threads serving requests.
 
-    Fans every event out to a queue per subscriber, so a slow reader cannot stall the game and a
-    browser that goes away takes its queue with it.
+    Owns a queue per subscriber and fans every event out to all of them, so a slow reader cannot
+    stall the game and a browser that goes away takes its queue with it.
     """
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._subscriptions: list[QueueEventSubscription] = []
+        self._queues: list[queue.Queue[GameEvent]] = []
 
     def publish(self, event: GameEvent) -> None:
         with self._lock:
-            subscriptions = list(self._subscriptions)
-        for subscription in subscriptions:
-            subscription.offer(event)
+            queues = list(self._queues)
+        for events in queues:
+            events.put(event)
 
     def subscribe(self) -> QueueEventSubscription:
-        subscription = QueueEventSubscription(on_close=self._remove)
+        events: queue.Queue[GameEvent] = queue.Queue()
         with self._lock:
-            self._subscriptions.append(subscription)
-        return subscription
+            self._queues.append(events)
+        return QueueEventSubscription(events, on_close=lambda: self._drop(events))
 
-    def _remove(self, subscription: QueueEventSubscription) -> None:
+    def _drop(self, events: queue.Queue[GameEvent]) -> None:
         with self._lock:
-            if subscription in self._subscriptions:
-                self._subscriptions.remove(subscription)
+            if events in self._queues:
+                self._queues.remove(events)
