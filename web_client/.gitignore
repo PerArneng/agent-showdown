@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Test and tooling caches
+coverage/
+.vite/
+
+# npm logs
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

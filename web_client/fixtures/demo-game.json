@@ -1,0 +1,286 @@
+[
+  {
+    "type": "player_joined",
+    "player": "dummy-1",
+    "position": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  {
+    "type": "player_joined",
+    "player": "dummy-2",
+    "position": {
+      "x": 9,
+      "y": 9
+    }
+  },
+  {
+    "type": "game_started",
+    "board": {
+      "width": 10,
+      "height": 10
+    },
+    "max_rounds": 10
+  },
+  {
+    "type": "round_started",
+    "round_number": 1
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-1",
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "direction": "UP_RIGHT"
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-2",
+    "position": {
+      "x": 9,
+      "y": 9
+    },
+    "direction": "UP_RIGHT"
+  },
+  {
+    "type": "round_started",
+    "round_number": 2
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 0,
+      "y": 0
+    },
+    "destination": {
+      "x": 0,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-2",
+    "source": {
+      "x": 9,
+      "y": 9
+    },
+    "destination": {
+      "x": 8,
+      "y": 8
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 3
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-1",
+    "position": {
+      "x": 0,
+      "y": 1
+    },
+    "direction": "UP_LEFT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-2",
+    "source": {
+      "x": 8,
+      "y": 8
+    },
+    "destination": {
+      "x": 7,
+      "y": 7
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 4
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 0,
+      "y": 1
+    },
+    "destination": {
+      "x": 1,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-2",
+    "source": {
+      "x": 7,
+      "y": 7
+    },
+    "destination": {
+      "x": 7,
+      "y": 8
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 5
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 1,
+      "y": 1
+    },
+    "destination": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-2",
+    "source": {
+      "x": 7,
+      "y": 8
+    },
+    "destination": {
+      "x": 8,
+      "y": 9
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 6
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 0,
+      "y": 0
+    },
+    "destination": {
+      "x": 0,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-2",
+    "source": {
+      "x": 8,
+      "y": 9
+    },
+    "destination": {
+      "x": 8,
+      "y": 8
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 7
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-1",
+    "position": {
+      "x": 0,
+      "y": 1
+    },
+    "direction": "LEFT"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-2",
+    "source": {
+      "x": 8,
+      "y": 8
+    },
+    "destination": {
+      "x": 9,
+      "y": 9
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 8
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-1",
+    "position": {
+      "x": 0,
+      "y": 1
+    },
+    "direction": "LEFT"
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-2",
+    "position": {
+      "x": 9,
+      "y": 9
+    },
+    "direction": "UP_RIGHT"
+  },
+  {
+    "type": "round_started",
+    "round_number": 9
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 0,
+      "y": 1
+    },
+    "destination": {
+      "x": 1,
+      "y": 1
+    }
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-2",
+    "position": {
+      "x": 9,
+      "y": 9
+    },
+    "direction": "UP_RIGHT"
+  },
+  {
+    "type": "round_started",
+    "round_number": 10
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 1,
+      "y": 1
+    },
+    "destination": {
+      "x": 2,
+      "y": 0
+    }
+  },
+  {
+    "type": "move_blocked",
+    "player": "dummy-2",
+    "position": {
+      "x": 9,
+      "y": 9
+    },
+    "direction": "RIGHT"
+  },
+  {
+    "type": "game_ended",
+    "rounds_played": 10
+  }
+]

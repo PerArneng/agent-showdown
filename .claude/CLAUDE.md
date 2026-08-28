@@ -1,7 +1,8 @@
 # agent-showdown
 
-Python app managed with **uv**. `uv run agent-showdown start` serves a web client on
-`--port` (default 8066); games are started from the browser.
+Python app managed with **uv**. `uv run agent-showdown start` serves the web client on
+`--port` (default 8066); games are started from the browser. The client is a separate
+TypeScript project in `web_client/` and **must be built first** — see its own `README.md`.
 
 ## Architecture
 
@@ -13,6 +14,7 @@ Python app managed with **uv**. `uv run agent-showdown start` serves a web clien
   `src/agent_showdown/interfaces/`.
 - Two frontends, both thin adapters over `Engine`: `cli/` and `web/`. `cli/` builds the
   container and hands the pieces to `web.create_app`; nothing else may import `Container`.
+  `web_client/` is a third, in TypeScript, over the HTTP the `web/` frontend exposes.
 - **One public class per file**, filename = class name in snake_case (`LocalFileSystem` →
   `local_file_system.py`).
 - **IO only in the edge modules**: `modules/clock`, `modules/console`, `modules/file_system`,
@@ -113,12 +115,23 @@ player never sees the board — only its own `GameView`, handed to it once per t
 
 ## The web client
 
-One page, `src/agent_showdown/web/static/index.html`: no build step, no framework, no CDN.
+`web_client/` is a **separate project with its own toolchain** — npm, Vite, TypeScript, vitest — and
+its own `README.md`, which is the authority on it. It follows the same architecture as the Python
+side: interfaces in front of modules, IO only in edge modules (`canvas`, `dom`, `event_stream`,
+`game_api`, `clock`), constructor injection, `container.ts` as the sole composition root, one public
+class per file in kebab-case. Its tests use fakes and need no browser.
 
-- Served through the `file_system` edge module, not `StaticFiles`, so the no-`open()` rule
-  holds everywhere.
-- **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only
-  thing the browser sends.
+- **It must be built before the server can serve it.** `find_client_dir` prefers
+  `web_client/dist` over the packaged copy, so `npm run dev` plus a browser reload is the whole loop
+  with no restart. `--client-dir` overrides the search and is validated the same way.
+- **The Python test suite must never need npm.** `InMemoryFileSystem` supplies a fake `dist/`.
+- Served through the `file_system` edge module, not `StaticFiles`, so the no-`open()` rule holds.
+  `web/assets.py` decides what may be served: a plain file name with a known extension, else 404
+  without touching the disk.
+- **Text only.** `FileSystem` has no `read_bytes` and the build has no binary assets. If one
+  appears, add `read_bytes` — do not reach for `open()`.
+- **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only thing
+  the browser sends.
 - `GET /api/events` is endless by design — one connection outlives many games. It polls the
   channel with a timeout and emits `: ping` when idle, which is also how it notices the reader
   is gone. Do not try to read it with `TestClient`; drive `stream_events` directly instead.
@@ -128,8 +141,8 @@ One page, `src/agent_showdown/web/static/index.html`: no build step, no framewor
   The graceful-shutdown timeout is only a backstop.
 - `POST /api/start` answers **202 before the game runs**, so a refused concurrent start still
   answers 202. The refusal shows up as a log line, not a status code.
-- Players get a color by join order from a palette in the page. The board is a plain grid and a
-  player is a filled circle.
+- **Event models must stay in step** with `src/interfaces/game/game-event.ts`. Adding a listener
+  method means adding the Python event, the TypeScript variant, and a fixture that still parses.
 
 ## Gotchas
 
@@ -147,6 +160,7 @@ One page, `src/agent_showdown/web/static/index.html`: no build step, no framewor
 ```
 uv sync                        # install
 uv run agent-showdown start    # serve the web client on 8066 (--port to change)
+npm --prefix web_client run build   # required before the server has anything to serve
 uv run pytest                  # test
 uv run mypy src tests          # types
 uv run ruff check src tests    # lint
@@ -154,7 +168,11 @@ uv run ruff check src tests    # lint
 
 Runtime deps: `typer`, `dependency-injector`, `pydantic`, `fastapi`, `uvicorn`.
 Dev: `pytest`, `mypy`, `ruff`, `httpx`.
-Python >= 3.11.
+Python >= 3.11. The client's dependencies are all dev-only and live in `web_client/`.
+
+Packaging: `web_client/dist` is force-included into the wheel as `agent_showdown/web/static`,
+and named in `[tool.hatch.build] artifacts` as well — it is gitignored, so without that the
+sdist drops it and `uv build` fails on the forced include.
 
 ## Adding a feature
 

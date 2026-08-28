@@ -16,8 +16,12 @@ local one, and the game cannot tell the difference.
 
 ```bash
 uv sync
+npm --prefix web_client install && npm --prefix web_client run build
 uv run agent-showdown start          # http://127.0.0.1:8066, or --port
 ```
+
+The client is a separate project, so it has to be built before the server has anything to serve.
+`start` says so plainly if you forget.
 
 Open the page and press **Start game**. Two players appear in the sidebar with their own colors and
 step around a 10x10 grid, half a second at a time so the movement is watchable. The same game still
@@ -38,6 +42,17 @@ The browser sees the same events, because the terminal log and the browser are t
 watching one game. Events reach the page over Server-Sent Events — the traffic is one-way, so a
 WebSocket would be more machinery for nothing. Moves differ every run: the players are random, and
 randomness is injected rather than reached for, so the tests are exact anyway.
+
+## The web client
+
+[`web_client/`](web_client/README.md) is a freestanding TypeScript project built on the same
+architecture as the Python side — interfaces in front of modules, IO confined to edge modules,
+constructor injection, one composition root.
+
+It also runs with no Python at all: open `web_client/dist/index.html?demo` from disk and a recorded
+game replays. That is not a special case in the client, it is a second implementation of
+`EventStream` chosen in the container — the same trick that lets a remote agent stand in for a local
+player. Because the canvas and the DOM sit behind interfaces, its tests need no browser.
 
 ## Agents as players
 
@@ -65,7 +80,8 @@ src/agent_showdown/
   interfaces/     Protocols and frozen Pydantic models. No behaviour, no imports from modules/.
   modules/        The implementations, under the same domain names.
   cli/            Typer frontend, and the only place the container is built.
-  web/            FastAPI frontend: three routes and one static page.
+  web/            FastAPI frontend: three routes over a built client directory.
+web_client/       The browser client. Its own project, its own tests, its own README.
 tests/
   fakes/          In-memory doubles for everything that touches the outside world.
   unit/           Pure classes, no IO.

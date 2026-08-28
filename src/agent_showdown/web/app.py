@@ -2,12 +2,13 @@ import asyncio
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, Response
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Response
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from agent_showdown.interfaces.engine import Engine
 from agent_showdown.interfaces.event_channel import EventChannel, EventSubscription
 from agent_showdown.interfaces.file_system import FileSystem
+from agent_showdown.web.assets import content_type, is_safe_name
 
 # How long a reader waits before emitting a comment line. Keeps an idle stream alive, and bounds
 # how long the loop can go without noticing the server is shutting down.
@@ -18,7 +19,7 @@ def create_app(
     engine: Engine,
     event_channel: EventChannel,
     file_system: FileSystem,
-    index_path: Path,
+    client_dir: Path,
     stopping: Callable[[], bool],
 ) -> FastAPI:
     """Build the web frontend. A thin adapter: it starts games and forwards events, nothing more."""
@@ -26,7 +27,17 @@ def create_app(
 
     @app.get("/")
     def index() -> HTMLResponse:
-        return HTMLResponse(file_system.read_text(index_path))
+        return HTMLResponse(file_system.read_text(client_dir / "index.html"))
+
+    @app.get("/assets/{name}")
+    def asset(name: str) -> Response:
+        # The built client's hashed bundles. Anything that is not a plain file name with a known
+        # extension is refused without touching the disk.
+        media_type = content_type(name) if is_safe_name(name) else None
+        path = client_dir / "assets" / name
+        if media_type is None or not file_system.exists(path):
+            raise HTTPException(status_code=404)
+        return Response(file_system.read_text(path), media_type=media_type)
 
     @app.post("/api/start", status_code=202)
     def start_game(background_tasks: BackgroundTasks) -> Response:
