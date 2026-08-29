@@ -11,6 +11,8 @@ from agent_showdown.modules.file_system import LocalFileSystem
 from agent_showdown.modules.game import (
     ChannelGameListener,
     DefaultGameFactory,
+    DefaultScoreboard,
+    DefaultSpellBook,
     DummyPlayerFactory,
     LogGameListener,
     SnapshotGameListener,
@@ -37,7 +39,15 @@ class Container(containers.DeclarativeContainer):
         formatter=log_formatter,
         console=console,
     )
-    game_factory = providers.Singleton(DefaultGameFactory, clock=clock)
+    spell_book = providers.Singleton(DefaultSpellBook)
+    # A singleton, so eliminations, deaths and wins survive the match they were earned in.
+    scoreboard = providers.Singleton(DefaultScoreboard)
+    game_factory = providers.Singleton(
+        DefaultGameFactory,
+        clock=clock,
+        spell_book=spell_book,
+        scoreboard=scoreboard,
+    )
     player_factory = providers.Singleton(
         DummyPlayerFactory,
         randomizer=randomizer,
@@ -66,4 +76,6 @@ class Container(containers.DeclarativeContainer):
         agent_roster=agent_roster,
         game_listeners=game_listeners,
         snapshot_source=snapshot_game_listener,
+        max_games=config.provided.max_games,
+        max_rounds=config.provided.max_rounds,
     )

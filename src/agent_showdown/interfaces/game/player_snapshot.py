@@ -10,5 +10,6 @@ class PlayerSnapshot(BaseModel):
 
     name: str
     position: Position
+    health: int = 100
     reasoning: str = ""
     think_seconds: float = 0.0

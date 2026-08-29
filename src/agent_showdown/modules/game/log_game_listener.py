@@ -28,8 +28,12 @@ class LogGameListener:
     def player_stats(self, player: Player, stats: PlayerStats) -> None:
         self._logger.info(
             f"player {player.get_name()} has taken {stats.turns} turns"
-            f" in {stats.total_seconds:.1f}s, {stats.average_seconds:.1f}s each"
+            f" in {stats.total_seconds:.1f}s, {stats.average_seconds:.1f}s each,"
+            f" {stats.eliminations} eliminations, {stats.deaths} deaths, {stats.wins} wins"
         )
+
+    def player_dead(self, player: Player) -> None:
+        self._logger.info(f"player {player.get_name()} is out of the fight and was skipped")
 
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self._logger.info(
@@ -38,6 +42,31 @@ class LogGameListener:
 
     def player_reasoned(self, player: Player, reasoning: str) -> None:
         self._logger.info(f"player {player.get_name()} reasoned: {reasoning}")
+
+    def spell_cast(
+        self,
+        player: Player,
+        spell: str,
+        origin: Position,
+        direction: Direction,
+        path: tuple[Position, ...],
+    ) -> None:
+        squares = " ".join(_cell(square) for square in path) or "nowhere"
+        self._logger.info(
+            f"player {player.get_name()} cast {spell} {direction} from {_cell(origin)}"
+            f" through {squares}"
+        )
+
+    def player_hit(
+        self, player: Player, source: Player, spell: str, damage: int, position: Position
+    ) -> None:
+        self._logger.info(
+            f"player {player.get_name()} was hit on {_cell(position)} by"
+            f" {source.get_name()}'s {spell} for {damage}"
+        )
+
+    def player_updated(self, player: Player, health: int) -> None:
+        self._logger.info(f"player {player.get_name()} is on {health} health")
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         self._logger.info(

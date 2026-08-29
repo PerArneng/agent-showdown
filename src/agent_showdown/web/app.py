@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, Response
@@ -23,7 +24,15 @@ def create_app(
     stopping: Callable[[], bool],
 ) -> FastAPI:
     """Build the web frontend. A thin adapter: it starts games and forwards events, nothing more."""
-    app = FastAPI(title="agent-showdown")
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        yield
+        # A series is ten long matches on a worker thread, and uvicorn's graceful shutdown waits
+        # for it. Without this, Ctrl-C hangs until the last round is played out.
+        engine.stop_game()
+
+    app = FastAPI(title="agent-showdown", lifespan=lifespan)
 
     @app.get("/")
     def index() -> HTMLResponse:

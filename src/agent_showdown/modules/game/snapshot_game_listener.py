@@ -49,6 +49,9 @@ class SnapshotGameListener:
     def player_stats(self, player: Player, stats: PlayerStats) -> None:
         """Not kept: the stream carries the totals and nothing renders them yet."""
 
+    def player_dead(self, player: Player) -> None:
+        """Health already says so. The stream carries the skip."""
+
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self._snapshot = self._with_player(
             self._player(player.get_name()).model_copy(update={"position": destination})
@@ -57,6 +60,26 @@ class SnapshotGameListener:
     def player_reasoned(self, player: Player, reasoning: str) -> None:
         self._snapshot = self._with_player(
             self._player(player.get_name()).model_copy(update={"reasoning": reasoning})
+        )
+
+    def spell_cast(
+        self,
+        player: Player,
+        spell: str,
+        origin: Position,
+        direction: Direction,
+        path: tuple[Position, ...],
+    ) -> None:
+        """A bolt is transient. What it did lands as `player_updated`."""
+
+    def player_hit(
+        self, player: Player, source: Player, spell: str, damage: int, position: Position
+    ) -> None:
+        """The damage it did arrives as `player_updated`, which is the state worth keeping."""
+
+    def player_updated(self, player: Player, health: int) -> None:
+        self._snapshot = self._with_player(
+            self._player(player.get_name()).model_copy(update={"health": health})
         )
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:

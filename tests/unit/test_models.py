@@ -6,12 +6,12 @@ from pydantic import TypeAdapter, ValidationError
 
 from agent_showdown.interfaces.file_system import FileInfo
 from agent_showdown.interfaces.game import (
+    Action,
+    ActionKind,
     Direction,
     GameEndedEvent,
     GameEvent,
-    Move,
     MoveBlockedEvent,
-    Movement,
     PlayerMovedEvent,
     PlayerTurn,
     Position,
@@ -48,14 +48,16 @@ def test_position_is_frozen() -> None:
 
 
 def test_player_turn_is_frozen() -> None:
-    turn = PlayerTurn(reasoning="up", movement=Movement(moves=(Move(direction="UP"),)))
+    turn = PlayerTurn(
+        reasoning="up", actions=(Action(kind=ActionKind.MOVE, direction="UP"),)
+    )
     with pytest.raises(ValidationError):
-        turn.movement = Movement(moves=())  # type: ignore[misc]
+        turn.actions = ()  # type: ignore[misc]
 
 
 def test_move_rejects_an_unknown_direction() -> None:
     with pytest.raises(ValidationError):
-        Move(direction="SIDEWAYS")
+        Action(kind=ActionKind.MOVE, direction="SIDEWAYS")
 
 
 def test_game_events_are_frozen() -> None:
@@ -80,3 +82,35 @@ def test_the_discriminator_picks_the_right_event_type() -> None:
     )
 
     assert parsed == GameEndedEvent(rounds_played=10)
+
+
+def test_every_new_event_is_reachable_through_the_discriminator() -> None:
+    for payload, expected in (
+        ({"type": "player_dead", "player": "a"}, "player_dead"),
+        ({"type": "player_updated", "player": "a", "health": 40}, "player_updated"),
+        (
+            {
+                "type": "spell_cast",
+                "player": "a",
+                "spell": "fireball",
+                "direction": "RIGHT",
+                "origin": {"x": 0, "y": 0},
+                "path": [{"x": 1, "y": 0}],
+            },
+            "spell_cast",
+        ),
+        (
+            {
+                "type": "player_hit",
+                "player": "b",
+                "source": "a",
+                "spell": "fireball",
+                "damage": 10,
+                "position": {"x": 1, "y": 0},
+            },
+            "player_hit",
+        ),
+    ):
+        parsed: GameEvent = TypeAdapter(GameEvent).validate_python(payload)
+
+        assert parsed.type == expected

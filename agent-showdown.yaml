@@ -8,6 +8,11 @@
 #
 # max_tokens is the *output* budget, not the context window. With thinking off the answer is
 # under 100 tokens; the budget only matters when thinking is on.
+# How many matches a series plays, and how many rounds each match lasts. A match ends sooner
+# once one robot is left standing.
+max_games: 10
+max_rounds: 100
+
 agents:
   - name: simple-strands-vllm
     base_url: http://vllm.brain.home.arpa/v1
@@ -16,7 +21,7 @@ agents:
     max_tokens: 16384
     timeout: 300.0
     # api_key: EMPTY    # servers that want no auth still need a value here
-    # max_moves: 4      # what the prompt asks for; the rules cap a turn at 8
+    # max_actions: 4    # what the prompt asks for; the rules cap a turn at 8
 
   - name: simple-strands-lmstudio
     base_url: http://localhost:1234/v1

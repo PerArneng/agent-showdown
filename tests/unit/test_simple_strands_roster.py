@@ -25,12 +25,12 @@ def test_each_player_gets_its_own_planner() -> None:
 
 
 def test_the_move_budget_comes_from_the_config() -> None:
-    config = AgentConfig(name="a", base_url="http://x/v1", model_id="m", max_moves=2)
+    config = AgentConfig(name="a", base_url="http://x/v1", model_id="m", max_actions=2)
 
     player = SimpleStrandsRoster([config]).create_players()[0]
 
     assert isinstance(player, SimpleStrandsPlayer)
-    assert player._max_moves == 2
+    assert player._max_actions == 2
 
 
 def test_an_empty_roster_fields_nobody() -> None:

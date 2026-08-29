@@ -34,12 +34,37 @@ class GameListener(Protocol):
         """A player's running totals, right after one of its turns ended."""
         ...
 
+    def player_dead(self, player: Player) -> None:
+        """A player's turn came round but it has no health left, so it was skipped."""
+        ...
+
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         """A player left `source` and now stands on `destination`."""
         ...
 
     def player_reasoned(self, player: Player, reasoning: str) -> None:
         """A player explained the turn it planned, before the moves are applied."""
+        ...
+
+    def spell_cast(
+        self,
+        player: Player,
+        spell: str,
+        origin: Position,
+        direction: Direction,
+        path: tuple[Position, ...],
+    ) -> None:
+        """A player cast `spell`, which travelled `path` from `origin`."""
+        ...
+
+    def player_hit(
+        self, player: Player, source: Player, spell: str, damage: int, position: Position
+    ) -> None:
+        """`player` was hit on `position` by `source`'s spell, for `damage`."""
+        ...
+
+    def player_updated(self, player: Player, health: int) -> None:
+        """A player's health changed. Zero means eliminated."""
         ...
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:

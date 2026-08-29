@@ -47,7 +47,9 @@ def test_every_event_logs_one_info_line() -> None:
         _INFO + "player dummy-1 moved from (0,0) to (1,0)",
         _INFO + "player dummy-1 blocked moving UP from (0,0)",
         _INFO + "player dummy-1 ended its turn after 2.3s",
-        _INFO + "player dummy-1 has taken 3 turns in 12.0s, 4.0s each",
+        _INFO
+        + "player dummy-1 has taken 3 turns in 12.0s, 4.0s each,"
+        + " 0 eliminations, 0 deaths, 0 wins",
         _INFO + "game ended after 10 rounds",
     ]
     assert console.error_lines == []

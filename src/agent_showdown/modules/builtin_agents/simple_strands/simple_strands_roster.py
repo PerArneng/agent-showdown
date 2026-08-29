@@ -22,6 +22,6 @@ class SimpleStrandsRoster:
 
     def create_players(self) -> Sequence[Player]:
         return [
-            SimpleStrandsPlayer(config.name, StrandsTurnPlanner(config), config.max_moves)
+            SimpleStrandsPlayer(config.name, StrandsTurnPlanner(config), config.max_actions)
             for config in self._configs
         ]

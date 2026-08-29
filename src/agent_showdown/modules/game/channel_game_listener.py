@@ -6,6 +6,8 @@ from agent_showdown.interfaces.game import (
     GameStartedEvent,
     MoveBlockedEvent,
     Player,
+    PlayerDeadEvent,
+    PlayerHitEvent,
     PlayerJoinedEvent,
     PlayerMovedEvent,
     PlayerReasonedEvent,
@@ -13,8 +15,10 @@ from agent_showdown.interfaces.game import (
     PlayerStatsEvent,
     PlayerTurnEndedEvent,
     PlayerTurnStartedEvent,
+    PlayerUpdatedEvent,
     Position,
     RoundStartedEvent,
+    SpellCastEvent,
     TurnFailedEvent,
 )
 
@@ -45,6 +49,9 @@ class ChannelGameListener:
     def player_stats(self, player: Player, stats: PlayerStats) -> None:
         self._channel.publish(PlayerStatsEvent(player=player.get_name(), stats=stats))
 
+    def player_dead(self, player: Player) -> None:
+        self._channel.publish(PlayerDeadEvent(player=player.get_name()))
+
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self._channel.publish(
             PlayerMovedEvent(player=player.get_name(), source=source, destination=destination)
@@ -52,6 +59,40 @@ class ChannelGameListener:
 
     def player_reasoned(self, player: Player, reasoning: str) -> None:
         self._channel.publish(PlayerReasonedEvent(player=player.get_name(), reasoning=reasoning))
+
+    def spell_cast(
+        self,
+        player: Player,
+        spell: str,
+        origin: Position,
+        direction: Direction,
+        path: tuple[Position, ...],
+    ) -> None:
+        self._channel.publish(
+            SpellCastEvent(
+                player=player.get_name(),
+                spell=spell,
+                direction=direction,
+                origin=origin,
+                path=path,
+            )
+        )
+
+    def player_hit(
+        self, player: Player, source: Player, spell: str, damage: int, position: Position
+    ) -> None:
+        self._channel.publish(
+            PlayerHitEvent(
+                player=player.get_name(),
+                source=source.get_name(),
+                spell=spell,
+                damage=damage,
+                position=position,
+            )
+        )
+
+    def player_updated(self, player: Player, health: int) -> None:
+        self._channel.publish(PlayerUpdatedEvent(player=player.get_name(), health=health))
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         self._channel.publish(

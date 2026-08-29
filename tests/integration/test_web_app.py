@@ -7,12 +7,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from agent_showdown.interfaces.game import (
+    Action,
+    ActionKind,
     Direction,
     GameEndedEvent,
     GameListener,
     GameStartedEvent,
-    Move,
-    Movement,
     PlayerJoinedEvent,
     PlayerTurn,
     RoundStartedEvent,
@@ -22,6 +22,8 @@ from agent_showdown.modules.event_channel import QueueEventChannel
 from agent_showdown.modules.game import (
     ChannelGameListener,
     DefaultGameFactory,
+    DefaultScoreboard,
+    DefaultSpellBook,
     DummyPlayerFactory,
     LogGameListener,
     SnapshotGameListener,
@@ -44,7 +46,7 @@ _POLL = 0.5
 
 # The built-in agent's turn, with the model replaced by a script.
 _PLANNED = PlayerTurn(
-    reasoning="", movement=Movement(moves=(Move(direction=Direction.UP),))
+    reasoning="", actions=(Action(kind=ActionKind.MOVE, direction=Direction.UP),)
 )
 
 
@@ -86,13 +88,17 @@ class Fixture:
     def build_engine(self, extra_listeners: Sequence[GameListener]) -> DefaultEngine:
         return DefaultEngine(
             logger=self.logger,
-            game_factory=DefaultGameFactory(FrozenClock(datetime(2025, 9, 10))),
+            game_factory=DefaultGameFactory(
+                FrozenClock(datetime(2025, 9, 10)), DefaultSpellBook(), DefaultScoreboard()
+            ),
             player_factory=DummyPlayerFactory(
                 randomizer=FixedRandomizer([3, 1]), clock=self.clock, think_time=0.0
             ),
             agent_roster=ScriptedAgentRoster(turns=[_PLANNED]),
             game_listeners=[LogGameListener(self.logger), *extra_listeners, self.snapshots],
             snapshot_source=self.snapshots,
+            max_games=1,
+            max_rounds=10,
         )
 
 
@@ -149,7 +155,8 @@ def test_the_game_still_reaches_the_terminal_log(app: Fixture) -> None:
     app.client.post("/api/start")
 
     assert app.console.lines[0].endswith("started")
-    assert app.console.lines[-1].endswith("game ended after 10 rounds")
+    assert app.console.lines[-2].endswith("game ended after 10 rounds")
+    assert app.console.lines[-1].endswith("series ended")
 
 
 def test_the_stream_turns_events_into_sse_frames() -> None:
@@ -210,11 +217,24 @@ class ReentrantListener:
 
     def player_joined(self, player: object, position: object) -> None: ...
     def round_started(self, round_number: int) -> None: ...
+    def player_dead(self, player: object) -> None: ...
     def player_moved(self, player: object, source: object, destination: object) -> None: ...
     def player_reasoned(self, player: object, reasoning: str) -> None: ...
     def player_turn_started(self, player: object) -> None: ...
     def player_turn_ended(self, player: object, seconds: float) -> None: ...
     def player_stats(self, player: object, stats: object) -> None: ...
+    def spell_cast(
+        self,
+        player: object,
+        spell: str,
+        origin: object,
+        direction: object,
+        path: object,
+    ) -> None: ...
+    def player_hit(
+        self, player: object, source: object, spell: str, damage: int, position: object
+    ) -> None: ...
+    def player_updated(self, player: object, health: int) -> None: ...
     def move_blocked(self, player: object, position: object, direction: object) -> None: ...
     def turn_failed(self, player: object, reason: str) -> None: ...
     def game_ended(self, rounds_played: int) -> None: ...

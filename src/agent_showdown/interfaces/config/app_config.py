@@ -28,3 +28,8 @@ class AppConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     agents: tuple[AgentConfig, ...] = _DEFAULT_AGENTS
+    # How many matches a series plays before the board goes quiet.
+    max_games: int = 10
+    # Rounds per match, so every robot gets at most this many turns. A match ends sooner once
+    # one robot is left standing.
+    max_rounds: int = 100

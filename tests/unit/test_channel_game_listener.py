@@ -5,6 +5,8 @@ from agent_showdown.interfaces.game import (
     GameStartedEvent,
     GameView,
     MoveBlockedEvent,
+    PlayerDeadEvent,
+    PlayerHitEvent,
     PlayerJoinedEvent,
     PlayerMovedEvent,
     PlayerReasonedEvent,
@@ -13,8 +15,10 @@ from agent_showdown.interfaces.game import (
     PlayerTurn,
     PlayerTurnEndedEvent,
     PlayerTurnStartedEvent,
+    PlayerUpdatedEvent,
     Position,
     RoundStartedEvent,
+    SpellCastEvent,
     TurnFailedEvent,
 )
 from agent_showdown.modules.game import ChannelGameListener
@@ -133,3 +137,52 @@ def test_player_stats_carries_the_running_totals() -> None:
     ChannelGameListener(channel).player_stats(NamedPlayer("bob"), stats)
 
     assert channel.published == [PlayerStatsEvent(player="bob", stats=stats)]
+
+
+def test_a_skipped_turn_publishes_the_player_that_was_skipped() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_dead(NamedPlayer("bob"))
+
+    assert channel.published == [PlayerDeadEvent(player="bob")]
+
+
+def test_a_cast_publishes_the_bolt_and_every_square_it_travelled() -> None:
+    channel = InMemoryEventChannel()
+    path = (Position(x=1, y=0), Position(x=2, y=0))
+
+    ChannelGameListener(channel).spell_cast(
+        NamedPlayer("bob"), "fireball", Position(x=0, y=0), Direction.RIGHT, path
+    )
+
+    assert channel.published == [
+        SpellCastEvent(
+            player="bob",
+            spell="fireball",
+            direction=Direction.RIGHT,
+            origin=Position(x=0, y=0),
+            path=path,
+        )
+    ]
+
+
+def test_a_hit_names_the_target_and_whoever_cast_it() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_hit(
+        NamedPlayer("bob"), NamedPlayer("alice"), "fireball", 10, Position(x=2, y=0)
+    )
+
+    assert channel.published == [
+        PlayerHitEvent(
+            player="bob", source="alice", spell="fireball", damage=10, position=Position(x=2, y=0)
+        )
+    ]
+
+
+def test_a_health_change_publishes_what_is_left() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_updated(NamedPlayer("bob"), 40)
+
+    assert channel.published == [PlayerUpdatedEvent(player="bob", health=40)]

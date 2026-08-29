@@ -15,7 +15,7 @@ agents:
     model_id: qwen3.6-35b
     max_tokens: 8192
     timeout: 60.0
-    max_moves: 2
+    max_actions: 2
     api_key: secret
 """
 
@@ -52,14 +52,14 @@ def test_every_endpoint_field_round_trips() -> None:
     assert remote.api_key == "secret"
     assert remote.max_tokens == 8192
     assert remote.timeout == 60.0
-    assert remote.max_moves == 2
+    assert remote.max_actions == 2
 
 
 def test_omitted_fields_take_their_defaults() -> None:
     config = _loader({DEFAULT_CONFIG_PATH: _TWO_AGENTS}).load(None)
 
     local = config.agents[0]
-    assert (local.api_key, local.max_tokens, local.timeout, local.max_moves) == (
+    assert (local.api_key, local.max_tokens, local.timeout, local.max_actions) == (
         "EMPTY",
         4096,
         300.0,
@@ -97,3 +97,20 @@ def test_a_missing_required_field_fails_loudly() -> None:
 def test_broken_yaml_names_the_file() -> None:
     with pytest.raises(ValueError, match="not valid YAML"):
         _loader({DEFAULT_CONFIG_PATH: "agents: [oops\n"}).load(None)
+
+
+def test_the_series_budgets_default_without_a_file() -> None:
+    config = _loader().load(None)
+
+    assert (config.max_games, config.max_rounds) == (10, 100)
+
+
+def test_the_series_budgets_can_be_set_in_the_file() -> None:
+    path = Path("/etc/agent-showdown.yaml")
+    loader = _loader({path: "max_games: 2\nmax_rounds: 5\n"})
+
+    config = loader.load(path)
+
+    assert (config.max_games, config.max_rounds) == (2, 5)
+    # Naming one budget leaves the built-in roster in place.
+    assert len(config.agents) == 2

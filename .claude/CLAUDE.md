@@ -90,9 +90,35 @@ player never sees the board — only its own `GameView`, handed to it once per t
 - **`take_turn` is a trust boundary.** A `Player` may be a remote agent, so `DefaultGame` wraps the
   call in a broad `except Exception` — deliberate, not sloppy — and reports it as `turn_failed`
   instead of letting one contestant kill the game.
-- **`_MAX_MOVES_PER_TURN` caps a plan and rejects an over-long one *whole***, so nobody is given a
-  partial turn they did not ask for. The value is arbitrary; revisit it once real agents show what
-  plans actually look like.
+- **`_MAX_ACTIONS_PER_TURN` caps a plan and rejects a bad one *whole***, so nobody is given a
+  partial turn they did not ask for. Over-long, or naming a spell the robot does not carry, and
+  nothing at all is applied. The value is arbitrary; revisit it once real agents show what plans
+  actually look like.
+- **A turn is one ordered `Action` list**, moves and casts interleaved and applied in order.
+  `Action` is flat — `kind`, `direction`, `spell` — rather than a union of a move and a cast model,
+  because `PlayerTurn` is handed to a model as a structured-output schema and a flat object
+  survives guided decoding where an `anyOf` often does not.
+- **Health is a rule of the game, spells are not.** Every robot starts on `_MAX_HEALTH` (100), and
+  a `Spell` is pure geometry: given an origin, a direction, a board and the occupied squares it
+  returns a `SpellEffect` — the path it travelled and the square it stopped on. It never sees a
+  `Player`. Mapping an impact square back to whoever stands there, and taking the health off them,
+  is the game's business, which is what keeps `FireBallSpell` unit-testable with no game around it.
+- Each robot holds **its own `Spell` instances**, handed out per registration by a `SpellBook`, so
+  a future spell may carry a cooldown without two contestants sharing it.
+- **Turn order rotates one seat per round**, round robin, so going first — which is worth a whole
+  turn when a bolt can end someone before they act — is passed along instead of belonging to
+  whoever registered first. The offset is derived from the round number, not drawn, so the game
+  stays pure and needs no randomizer. Round 1 is still registration order.
+- **A dead robot is never asked for a plan.** Its turn is `player_turn_started` → `player_dead` →
+  `player_turn_ended(0.0)` → `player_stats`, so it keeps reporting its tally but costs no model
+  call, and no near-zero turn drags its average down.
+- **A match ends early once one robot is left standing**, and the survivor takes the win; if the
+  rounds run out, the healthiest robot alone at the top wins and an outright tie awards nobody. A
+  lone contestant is not in a fight, so it neither wins nor ends a match by standing.
+- **`Scoreboard` is the one mutable thing in the domain**, and the only state that outlives a
+  match: a `Game` is built fresh per match, so turns, eliminations, deaths and wins kept there
+  would reset every time. It keys by `Player` object like the rest of the game. This is why
+  `DefaultEngine` builds its contestants **once per series** and reuses the objects.
 - **Players are keyed by object, not name** (`dict[Player, Position]`) — two contestants may share
   a name.
 - `Direction` is a bare `StrEnum`. The deltas live in `DefaultGame`, because which way is "up" is a
@@ -106,9 +132,11 @@ player never sees the board — only its own `GameView`, handed to it once per t
 - **`Player` is synchronous and stays that way.** A2A's JSON-RPC `SendMessage` blocks by default, so
   a remote player needs no `async` — nothing forces it onto `Game`, `Engine` or the CLI. The web
   frontend is the only async code, and it keeps the blocking game on a worker thread.
-- **`Engine.start_game` plays a game; `cli start` serves the UI.** Running a match is a use case on
-  the facade; serving is a frontend job. `start_game` refuses to run two games at once — two would
-  interleave their events into one stream of listeners.
+- **`Engine.start_game` plays a series; `cli start` serves the UI.** Running matches is a use case
+  on the facade; serving is a frontend job. `start_game` refuses to run two series at once — two
+  would interleave their events into one stream of listeners. It plays `max_games` matches back to
+  back, each a fresh `Game`, and `stop_game` ends the series at the next turn boundary. The web
+  frontend calls it from a lifespan shutdown hook, or Ctrl-C waits out the remaining matches.
 - **Every listener method has a matching frozen event model** in `interfaces/game/`, told apart by a
   `Literal` `type` and collected in the `GameEvent` union. `ChannelGameListener` is the only
   translator between the two. Adding a listener method means adding its event as well, and events
@@ -142,8 +170,13 @@ One sub-package per agent, named after it: `simple_strands/` today.
 - **A fresh `Agent` per turn.** The contestant is stateless by design, and an unchanging system
   prompt is what a vLLM prefix cache keys on. Reasoning tokens are spent out of `max_tokens`
   before any answer arrives, so budget it generously and set a timeout in the hundreds of seconds.
-- `max_moves` on the config is what the *prompt* asks for; `_MAX_MOVES_PER_TURN` in `DefaultGame`
-  is what the *rules* allow. Set the first below the second, or every turn is refused whole.
+- `max_actions` on the config is what the *prompt* asks for; `_MAX_ACTIONS_PER_TURN` in
+  `DefaultGame` is what the *rules* allow. Set the first below the second, or every turn is
+  refused whole.
+- The agents play **magic robots in a light fantasy duel**, and the aim is to be the last one
+  standing. The prompt carries the robot's own health, every other robot's position and health
+  (the scrapped included — a body still blocks a fireball) and the spells it carries with their
+  damage and range.
 - **`thinking: false` is worth minutes per turn**, and it is *two* wire fields, not one:
   `_NO_THINKING` in `StrandsTurnPlanner` sends both `reasoning_effort: "none"` and
   `extra_body.chat_template_kwargs.enable_thinking: false`. Measured against both boxes:
@@ -160,8 +193,8 @@ One sub-package per agent, named after it: `simple_strands/` today.
 ## Configuration
 
 `interfaces/config/` holds `AgentConfig` (name plus one OpenAI-compatible endpoint and its
-budgets) and `AppConfig` (`agents: tuple[AgentConfig, ...]`). `YamlConfigLoader` reads them from
-`agent-showdown.yaml`.
+budgets) and `AppConfig` (`agents`, plus `max_games` and `max_rounds` for the series).
+`YamlConfigLoader` reads them from `agent-showdown.yaml`.
 
 - **The defaults are in the models, so no file is needed.** A missing default path yields
   `AppConfig()` and the run still fields both built-in agents. A path named explicitly with

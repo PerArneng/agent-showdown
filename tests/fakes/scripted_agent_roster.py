@@ -12,13 +12,16 @@ class ScriptedAgentRoster:
         self,
         names: Sequence[str] = ("simple-strands-1",),
         turns: Sequence[PlayerTurn] = (),
-        max_moves: int = 4,
+        max_actions: int = 4,
     ) -> None:
         self._names = list(names)
-        self._max_moves = max_moves
+        self._max_actions = max_actions
         self.planner = ScriptedTurnPlanner(turns)
+        # How often the engine asked for a roster, which is once per series and not per match.
+        self.rosters_created = 0
 
     def create_players(self) -> Sequence[Player]:
+        self.rosters_created += 1
         return [
-            SimpleStrandsPlayer(name, self.planner, self._max_moves) for name in self._names
+            SimpleStrandsPlayer(name, self.planner, self._max_actions) for name in self._names
         ]

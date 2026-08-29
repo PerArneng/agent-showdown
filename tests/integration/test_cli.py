@@ -8,7 +8,7 @@ from typer.testing import CliRunner, Result
 from agent_showdown.cli import main as cli_main
 from agent_showdown.container import Container
 from agent_showdown.interfaces.config import AppConfig
-from agent_showdown.interfaces.game import Direction, Move, Movement, PlayerTurn
+from agent_showdown.interfaces.game import Action, ActionKind, Direction, PlayerTurn
 from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedAgentRoster
 
 runner = CliRunner()
@@ -82,19 +82,22 @@ def test_the_container_still_plays_a_game() -> None:
     container.clock.override(FrozenClock(datetime(2025, 9, 10)))
     container.console.override(console)
     container.randomizer.override(FixedRandomizer([3, 1]))
-    container.config.override(AppConfig())
+    container.config.override(AppConfig(max_games=1, max_rounds=10))
     # Stands in for the model, so the suite never opens a socket.
     container.agent_roster.override(
         ScriptedAgentRoster(
             turns=[
-                PlayerTurn(reasoning="", movement=Movement(moves=(Move(direction=Direction.UP),)))
+                PlayerTurn(
+                    reasoning="",
+                    actions=(Action(kind=ActionKind.MOVE, direction=Direction.UP),),
+                )
             ]
         )
     )
 
     container.engine().start_game()
 
-    assert console.lines[0] == "2025-09-10 \x1b[32mINFO\x1b[0m started"
+    assert console.lines[0] == "2025-09-10 \x1b[32mINFO\x1b[0m match 1 of 1 started"
 
 
 def test_start_refuses_when_the_client_is_not_built(

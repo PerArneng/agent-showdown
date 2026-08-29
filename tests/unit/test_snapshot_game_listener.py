@@ -180,3 +180,59 @@ def test_stats_leave_the_snapshot_alone_while_nothing_renders_them() -> None:
     listener.player_stats(player, PlayerStats(turns=2, total_seconds=8.0, average_seconds=4.0))
 
     assert listener.snapshot() == before
+
+
+def test_a_robot_joins_on_full_health() -> None:
+    listener = SnapshotGameListener()
+
+    listener.player_joined(_NamedPlayer("a"), Position(x=1, y=2))
+
+    assert listener.snapshot().players[0].health == 100
+
+
+def test_the_snapshot_follows_the_health_a_robot_has_left() -> None:
+    listener = SnapshotGameListener()
+    player = _NamedPlayer("a")
+    listener.player_joined(player, Position(x=1, y=2))
+
+    listener.player_updated(player, 40)
+
+    assert listener.snapshot().players[0].health == 40
+    # The rest of the robot is untouched.
+    assert listener.snapshot().players[0].position == Position(x=1, y=2)
+
+
+def test_a_health_change_adopts_a_robot_a_late_client_never_saw_join() -> None:
+    listener = SnapshotGameListener()
+
+    listener.player_updated(_NamedPlayer("late"), 70)
+
+    assert listener.snapshot().players[0].name == "late"
+    assert listener.snapshot().players[0].health == 70
+
+
+def test_a_bolt_in_flight_leaves_the_snapshot_alone() -> None:
+    listener = SnapshotGameListener()
+    player, target = _NamedPlayer("a"), _NamedPlayer("b")
+    listener.player_joined(player, Position(x=0, y=0))
+    listener.player_joined(target, Position(x=1, y=0))
+    before = listener.snapshot()
+
+    listener.spell_cast(player, "fireball", Position(x=0, y=0), Direction.RIGHT, ())
+    listener.player_hit(target, player, "fireball", 10, Position(x=1, y=0))
+    listener.player_dead(target)
+
+    # Only `player_updated` carries state worth keeping; the rest is for the stream to animate.
+    assert listener.snapshot() == before
+
+
+def test_a_new_game_puts_every_robot_back_on_full_health() -> None:
+    listener = SnapshotGameListener()
+    player = _NamedPlayer("a")
+    listener.player_joined(player, Position(x=1, y=2))
+    listener.player_updated(player, 0)
+
+    listener.game_started(_BOARD, max_rounds=7)
+    listener.player_joined(player, Position(x=1, y=2))
+
+    assert listener.snapshot().players[0].health == 100

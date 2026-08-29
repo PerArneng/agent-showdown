@@ -11,6 +11,8 @@ from agent_showdown.interfaces.game import Board, Position
 from agent_showdown.modules.game import (
     A2APlayerFactory,
     DefaultGame,
+    DefaultScoreboard,
+    DefaultSpellBook,
     DummyPlayerFactory,
     LogGameListener,
 )
@@ -25,9 +27,9 @@ from tests.fakes import (
 
 # The remote agent walks right, then down, then right again.
 _REPLIES = [
-    '{"reasoning": "east first", "movement": {"moves": [{"direction": "RIGHT"}]}}',
-    '{"reasoning": "then south", "movement": {"moves": [{"direction": "DOWN"}]}}',
-    '{"reasoning": "east again", "movement": {"moves": [{"direction": "RIGHT"}]}}',
+    '{"reasoning": "east first", "actions": [{"kind": "move", "direction": "RIGHT"}]}',
+    '{"reasoning": "then south", "actions": [{"kind": "move", "direction": "DOWN"}]}',
+    '{"reasoning": "east again", "actions": [{"kind": "move", "direction": "RIGHT"}]}',
 ]
 
 
@@ -44,7 +46,12 @@ def _log_listener(console: InMemoryConsole) -> LogGameListener:
 def test_a_remote_agent_plays_alongside_a_local_dummy() -> None:
     console, recorder = InMemoryConsole(), RecordingGameListener()
     client = ScriptedAgentClient(_REPLIES)
-    game = DefaultGame(Board(width=5, height=5), FrozenClock(datetime(2025, 9, 10)))
+    game = DefaultGame(
+        Board(width=5, height=5),
+        FrozenClock(datetime(2025, 9, 10)),
+        DefaultSpellBook(),
+        DefaultScoreboard(),
+    )
     game.add_listener(_log_listener(console))
     game.add_listener(recorder)
     game.register_player(A2APlayerFactory(client).create("agent-1"), Position(x=0, y=0))
@@ -73,7 +80,12 @@ def test_a_remote_agent_plays_alongside_a_local_dummy() -> None:
 
 def test_the_agent_is_asked_once_per_round_under_a_stable_context_id() -> None:
     client = ScriptedAgentClient(_REPLIES)
-    game = DefaultGame(Board(width=5, height=5), FrozenClock(datetime(2025, 9, 10)))
+    game = DefaultGame(
+        Board(width=5, height=5),
+        FrozenClock(datetime(2025, 9, 10)),
+        DefaultSpellBook(),
+        DefaultScoreboard(),
+    )
     game.register_player(A2APlayerFactory(client).create("agent-1"), Position(x=0, y=0))
 
     game.start(max_rounds=3)
@@ -93,7 +105,12 @@ def test_the_agent_is_asked_once_per_round_under_a_stable_context_id() -> None:
 def test_a_dead_agent_fails_its_turns_but_the_game_finishes() -> None:
     console, recorder = InMemoryConsole(), RecordingGameListener()
     client = ScriptedAgentClient(fails_with="connection refused")
-    game = DefaultGame(Board(width=5, height=5), FrozenClock(datetime(2025, 9, 10)))
+    game = DefaultGame(
+        Board(width=5, height=5),
+        FrozenClock(datetime(2025, 9, 10)),
+        DefaultSpellBook(),
+        DefaultScoreboard(),
+    )
     game.add_listener(_log_listener(console))
     game.add_listener(recorder)
     game.register_player(A2APlayerFactory(client).create("agent-1"), Position(x=0, y=0))

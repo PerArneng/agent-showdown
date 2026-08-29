@@ -17,5 +17,12 @@ class Game(Protocol):
         ...
 
     def start(self, max_rounds: int) -> None:
-        """Play up to `max_rounds` rounds, asking every player for a turn in each."""
+        """Play up to `max_rounds` rounds, asking every living player for a turn in each.
+
+        Ends early once at most one robot is left standing, or once `stop` has been called.
+        """
+        ...
+
+    def stop(self) -> None:
+        """Ask the match to end at the next turn boundary. Safe to call before it starts."""
         ...

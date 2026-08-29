@@ -17,9 +17,9 @@ class AgentConfig(BaseModel):
     max_tokens: int = 4096
     # A long prompt can prefill slowly on a box without CUDA graphs.
     timeout: float = 300.0
-    # What the prompt asks for. Must not exceed the game's own cap, or every turn is
-    # refused whole.
-    max_moves: int = 4
+    # How many actions the prompt asks for. Must not exceed the game's own cap, or every
+    # turn is refused whole.
+    max_actions: int = 4
     # Whether the model may think before it answers. Off is dramatically faster: a turn that
     # takes minutes with thinking on lands in seconds with it off.
     thinking: bool = True

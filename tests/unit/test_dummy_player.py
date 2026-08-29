@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from agent_showdown.interfaces.game import Board, Direction, GameView, Position
+from agent_showdown.interfaces.game import ActionKind, Board, Direction, GameView, Position
 from agent_showdown.modules.game import DummyPlayer
 from tests.fakes import FixedRandomizer, FrozenClock
 
@@ -8,6 +8,7 @@ _VIEW = GameView(
     board=Board(width=3, height=3),
     position=Position(x=1, y=1),
     round_number=1,
+    health=100,
 )
 
 
@@ -29,10 +30,10 @@ def test_take_turn_returns_the_direction_the_randomizer_picked() -> None:
     directions = list(Direction)
     player = _player(FixedRandomizer([0, 3]), _clock())
 
-    first = player.take_turn(_VIEW).movement.moves
-    second = player.take_turn(_VIEW).movement.moves
+    first = player.take_turn(_VIEW).actions
+    second = player.take_turn(_VIEW).actions
 
-    assert first == (first[0],) and len(first) == 1
+    assert len(first) == 1 and first[0].kind is ActionKind.MOVE
     assert first[0].direction == directions[0]
     assert second[0].direction == directions[3]
 

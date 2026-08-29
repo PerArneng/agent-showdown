@@ -1,5 +1,5 @@
 from agent_showdown.interfaces.clock import Clock
-from agent_showdown.interfaces.game import Direction, GameView, Move, Movement, PlayerTurn
+from agent_showdown.interfaces.game import Action, ActionKind, Direction, GameView, PlayerTurn
 from agent_showdown.interfaces.randomizer import Randomizer
 
 
@@ -24,5 +24,5 @@ class DummyPlayer:
         direction = self._randomizer.choice(list(Direction))
         return PlayerTurn(
             reasoning=f"no plan, wandering {direction}",
-            movement=Movement(moves=(Move(direction=direction),)),
+            actions=(Action(kind=ActionKind.MOVE, direction=direction),),
         )

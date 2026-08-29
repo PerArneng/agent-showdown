@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from agent_showdown.interfaces.agent_client import AgentClientError
-from agent_showdown.interfaces.game import Board, Direction, GameView, Position
+from agent_showdown.interfaces.game import ActionKind, Board, Direction, GameView, Position
 from agent_showdown.modules.game import A2APlayer, A2APlayerFactory
 from tests.fakes import ScriptedAgentClient
 
@@ -12,10 +12,12 @@ _VIEW = GameView(
     board=Board(width=3, height=3),
     position=Position(x=1, y=1),
     round_number=2,
+    health=100,
 )
 _TURN = (
     '{"reasoning": "cutting to the corner", '
-    '"movement": {"moves": [{"direction": "UP"}, {"direction": "DOWN_LEFT"}]}}'
+    '"actions": [{"kind": "move", "direction": "UP"}, '
+    '{"kind": "cast", "direction": "DOWN_LEFT", "spell": "fireball"}]}'
 )
 
 
@@ -26,9 +28,11 @@ def test_get_name_round_trips() -> None:
 def test_take_turn_parses_the_reply_into_a_validated_turn() -> None:
     player = A2APlayer("agent-1", "ctx", ScriptedAgentClient([_TURN]))
 
-    moves = player.take_turn(_VIEW).movement.moves
+    actions = player.take_turn(_VIEW).actions
 
-    assert [move.direction for move in moves] == [Direction.UP, Direction.DOWN_LEFT]
+    assert [action.direction for action in actions] == [Direction.UP, Direction.DOWN_LEFT]
+    assert [action.kind for action in actions] == [ActionKind.MOVE, ActionKind.CAST]
+    assert actions[1].spell == "fireball"
 
 
 def test_take_turn_sends_the_view_as_json_under_the_context_id() -> None:
@@ -43,6 +47,9 @@ def test_take_turn_sends_the_view_as_json_under_the_context_id() -> None:
         "board": {"width": 3, "height": 3},
         "position": {"x": 1, "y": 1},
         "round_number": 2,
+        "health": 100,
+        "opponents": [],
+        "spells": [],
     }
 
 
@@ -54,7 +61,7 @@ def test_a_malformed_reply_raises() -> None:
 
 
 def test_a_reply_naming_an_unknown_direction_raises() -> None:
-    reply = '{"reasoning": "", "movement": {"moves": [{"direction": "SIDEWAYS"}]}}'
+    reply = '{"reasoning": "", "actions": [{"kind": "move", "direction": "SIDEWAYS"}]}'
     player = A2APlayer("agent-1", "ctx", ScriptedAgentClient([reply]))
 
     with pytest.raises(ValidationError):

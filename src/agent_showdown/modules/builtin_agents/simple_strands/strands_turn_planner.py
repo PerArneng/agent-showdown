@@ -8,15 +8,15 @@ from agent_showdown.interfaces.config import AgentConfig
 from agent_showdown.interfaces.game import PlayerTurn
 
 _SYSTEM_PROMPT = (
-    "You are a contestant in a grid game. You are told the board, where you stand and which "
-    "directions exist. Answer with the moves you want to make and a one-sentence reason. "
-    "Never plan a move that would leave the board."
+    "You are a magic robot fighting other magic robots in a small arena. This is a light-hearted "
+    "fantasy duel, not a serious one: play it with a bit of swagger. You are told the arena, where "
+    "you stand, how much health you have, where the other robots are and what they have left, and "
+    "which spells you carry. The aim is to be the last robot standing, so close in on a robot you "
+    "can burn down and keep out of the line of fire yourself. Answer with the actions you want to "
+    "take and a one-sentence reason. Never plan a move that would leave the arena, and only cast a "
+    "spell you actually carry."
 )
 
-
-# Turning thinking off is not one field: vLLM honours the Qwen chat-template switch and
-# ignores `reasoning_effort`, while LM Studio does exactly the reverse. Both ignore the
-# other's field silently, so sending both is what makes one flag work on either server.
 _NO_THINKING: dict[str, Any] = {
     "reasoning_effort": "none",
     "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},

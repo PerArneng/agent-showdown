@@ -27,11 +27,34 @@ class RecordingGameListener:
     def player_stats(self, player: Player, stats: PlayerStats) -> None:
         self.events.append(("player_stats", (player.get_name(), stats)))
 
+    def player_dead(self, player: Player) -> None:
+        self.events.append(("player_dead", (player.get_name(),)))
+
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self.events.append(("player_moved", (player.get_name(), source, destination)))
 
     def player_reasoned(self, player: Player, reasoning: str) -> None:
         self.events.append(("player_reasoned", (player.get_name(), reasoning)))
+
+    def spell_cast(
+        self,
+        player: Player,
+        spell: str,
+        origin: Position,
+        direction: Direction,
+        path: tuple[Position, ...],
+    ) -> None:
+        self.events.append(("spell_cast", (player.get_name(), spell, origin, direction, path)))
+
+    def player_hit(
+        self, player: Player, source: Player, spell: str, damage: int, position: Position
+    ) -> None:
+        self.events.append(
+            ("player_hit", (player.get_name(), source.get_name(), spell, damage, position))
+        )
+
+    def player_updated(self, player: Player, health: int) -> None:
+        self.events.append(("player_updated", (player.get_name(), health)))
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
         self.events.append(("move_blocked", (player.get_name(), position, direction)))
