@@ -1,0 +1,29 @@
+/* The one ordering rule a client must get right. Rendered to ../img/connection-flow.svg */
+digraph connection_flow {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=11, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  start    [label="start", shape=circle, fillcolor="#e6e6e6", width=0.4, label=""];
+  sub      [label="1. GET /api/events\nsubscribe, keep open", fillcolor="#d8ecd8"];
+  fetch    [label="2. GET /api/state\nfetch the snapshot", fillcolor="#cfe3f7"];
+  fold     [label="3. fold the snapshot in\nas GAPS ONLY", fillcolor="#f7e3c0"];
+  live     [label="4. apply live events\nfor as long as the stream lasts", fillcolor="#d8ecd8"];
+  drop     [label="connection dropped\n(no events, no pings)", fillcolor="#f6cfcf"];
+
+  wrong    [label="WRONG: fetch first\nevents between fetch and subscribe\nare lost with nothing to reveal it",
+            fillcolor="#f6cfcf", shape=note];
+
+  start -> sub;
+  sub   -> fetch  [label="only after subscribing"];
+  fetch -> fold;
+  fold  -> live   [label="live events always win:\nthe snapshot is older"];
+  live  -> live   [label="event"];
+  live  -> drop   [label="silence"];
+  drop  -> sub    [label="reconnect: start over,\nanything missed is gone"];
+
+  {rank=same; sub; wrong;}
+  sub -> wrong [style=invis];
+}

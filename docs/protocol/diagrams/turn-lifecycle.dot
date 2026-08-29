@@ -1,0 +1,39 @@
+/* The three shapes a single turn can take. Rendered to ../img/turn-lifecycle.svg */
+digraph turn_lifecycle {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  tstart  [label="player_turn_started", fillcolor="#d8ecd8"];
+  branch  [label="alive?", shape=diamond, fillcolor="#e6e6e6"];
+
+  dead    [label="player_dead\nnever asked for a plan — no model call,\nno effect on its timing averages", fillcolor="#f6cfcf"];
+  reason  [label="player_reasoned\nomitted entirely when the reasoning is empty", fillcolor="#d8ecd8"];
+  judge   [label="plan accepted?", shape=diamond, fillcolor="#e6e6e6"];
+  failed  [label="turn_failed\nreason (prose — do not parse)\nNOTHING is applied: no partial turns", fillcolor="#f6cfcf"];
+  acts    [label="the actions, in order — up to 8\nplayer_moved  |  move_blocked  |  spell_cast …", fillcolor="#d8ecd8"];
+
+  tend    [label="player_turn_ended\nseconds — 0.0 for a skipped robot", fillcolor="#d8ecd8"];
+  stats   [label="player_stats\ncumulative across the whole arena run", fillcolor="#d8ecd8"];
+
+  tstart -> branch;
+  branch -> dead   [label="  no"];
+  branch -> reason [label="  yes"];
+  reason -> judge;
+  judge  -> failed [label="  no: more than 8 actions,\n  or a spell it does not carry"];
+  judge  -> acts   [label="  yes"];
+
+  dead   -> tend;
+  failed -> tend;
+  acts   -> tend;
+  tend   -> stats;
+
+  {rank=same; dead; reason;}
+  {rank=same; failed; acts;}
+
+  note [shape=note, fillcolor="#cfe3f7", fontsize=9,
+        label="player_turn_ended and player_stats are emitted\nfor EVERY turn — skipped, failed or played."];
+  tend -> note [style=dashed, arrowhead=none];
+}

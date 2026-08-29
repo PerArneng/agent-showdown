@@ -1,0 +1,33 @@
+/* One match, top to bottom. The turn itself is its own diagram.
+   Rendered to ../img/match-lifecycle.svg */
+digraph match_lifecycle {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  joined  [label="player_joined  × N\none per contestant — BEFORE the match starts", fillcolor="#cfe3f7"];
+  started [label="game_started\nboard, max_rounds", fillcolor="#cfe3f7"];
+  round   [label="round_started\nround_number, 1-based", fillcolor="#cfe3f7"];
+  turn    [label="one turn per living robot\nin rotating seat order\n( see the turn diagram )",
+           fillcolor="#d8ecd8", style="filled,dashed", color="#888888"];
+  more    [label="more rounds?", shape=diamond, fillcolor="#e6e6e6"];
+  ended   [label="game_ended\nrounds_played  ≤  max_rounds", fillcolor="#cfe3f7"];
+  next    [label="the next match starts immediately\nhealth and seats reset — the score does not",
+           fillcolor="#f7e3c0"];
+
+  joined -> started -> round -> turn -> more;
+  more   -> round [label="  yes"];
+  more   -> ended [label="  no: one robot left standing,\n  or the round budget is spent"];
+  ended  -> next;
+  next   -> joined [label="  same robots, re-seated,\n  plus anyone who joined meanwhile"];
+
+  seats [shape=note, fillcolor="#e6e6e6", fontsize=9,
+         label="Seats are the four corners, cycled in\nregistration order: (0,0) (9,9) (0,9) (9,0).\nMore than four robots share corners."];
+  joined -> seats [style=dashed, arrowhead=none];
+
+  order [shape=note, fillcolor="#e6e6e6", fontsize=9,
+         label="Turn order rotates one seat per round:\nround 1 leads with the first robot,\nround 2 with the second, and so on.\nDo not assume a stable sequence."];
+  turn -> order [style=dashed, arrowhead=none];
+}

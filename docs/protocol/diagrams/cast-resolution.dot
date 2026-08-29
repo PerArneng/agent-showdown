@@ -1,0 +1,28 @@
+/* What a client receives when a spell is cast, and in what order.
+   Rendered to ../img/cast-resolution.svg */
+digraph cast_resolution {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  cast   [label="spell_cast\nplayer, spell, direction, origin, path[0..3]\nALWAYS emitted", fillcolor="#d8ecd8"];
+  hit    [label="did the bolt stop on a robot?", shape=diamond, fillcolor="#e6e6e6"];
+  miss   [label="nothing follows\nthe bolt fizzled at the wall\nor ran out of range", fillcolor="#e6e6e6"];
+  phit   [label="player_hit\nplayer = TARGET, source = CASTER\ndamage, position", fillcolor="#f6cfcf"];
+  upd    [label="player_updated\nhealth 0..100 — AUTHORITATIVE\ndo not subtract damage yourself", fillcolor="#f7e3c0"];
+  dead   [label="health == 0\nthe robot is eliminated\n(no separate 'died' event)", fillcolor="#f6cfcf"];
+  alive  [label="still standing", fillcolor="#e6e6e6"];
+
+  cast -> hit;
+  hit  -> miss [label="no"];
+  hit  -> phit [label="yes"];
+  phit -> upd;
+  upd  -> dead  [label="health == 0"];
+  upd  -> alive [label="health > 0"];
+
+  note [shape=note, fillcolor="#cfe3f7", fontsize=9,
+        label="Order exists so a client can animate the bolt\nalong `path` BEFORE the health bar drops.\n\npath is empty when fired into a wall;\nits last entry is where the bolt stopped,\nand equals player_hit.position on a hit."];
+  cast -> note [style=dashed, arrowhead=none];
+}

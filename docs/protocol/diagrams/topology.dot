@@ -1,0 +1,52 @@
+/* How a client reaches the arena. Rendered to ../img/topology.svg — see ../README-diagrams.md */
+digraph topology {
+  bgcolor="transparent";
+  rankdir=LR;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=11, style="filled", color="#00000000", fontcolor="#1a1a1a"];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  subgraph cluster_client {
+    label="  any client  "; style="rounded,dashed"; color="#888888";
+    client [label="client\n(browser, curl, agent)", shape=box, fillcolor="#cfe3f7"];
+  }
+
+  subgraph cluster_server {
+    label="  agent-showdown server  "; style="rounded,dashed"; color="#888888";
+
+    subgraph cluster_routes {
+      label="  web/app.py  "; style="rounded"; color="#bbbbbb";
+      index    [label="GET /", shape=box, fillcolor="#e6e6e6"];
+      state    [label="GET /api/state", shape=box, fillcolor="#cfe3f7"];
+      events   [label="GET /api/events\n(SSE, endless)", shape=box, fillcolor="#d8ecd8"];
+      join     [label="POST /api/players", shape=box, fillcolor="#cfe3f7"];
+      leave    [label="DELETE /api/players/{name}", shape=box, fillcolor="#cfe3f7"];
+      newgame  [label="POST /api/new-game", shape=box, fillcolor="#cfe3f7"];
+    }
+
+    engine   [label="Engine\n(the arena loop)", shape=box, fillcolor="#f7e3c0"];
+    registry [label="PlayerRegistry\nwho is in the arena", shape=box, fillcolor="#f7e3c0"];
+    game     [label="Game\none match", shape=box, fillcolor="#f7e3c0"];
+    channel  [label="EventChannel\nfan-out queue", shape=box, fillcolor="#d8ecd8"];
+    snapshot [label="SnapshotGameListener\nthe board as a value", shape=box, fillcolor="#d8ecd8"];
+  }
+
+  client -> index    [label="html"];
+  client -> state    [label="catch up"];
+  client -> events   [label="subscribe"];
+  client -> join     [label="register"];
+  client -> leave    [label="unregister"];
+  client -> newgame  [label="abandon match"];
+
+  join    -> engine  [label="register_player"];
+  leave   -> engine  [label="unregister_player"];
+  newgame -> engine  [label="new_game"];
+  engine  -> registry [label="reads before\neach match", dir=both];
+  engine  -> game     [label="plays"];
+  game    -> channel  [label="events"];
+  game    -> snapshot [label="events"];
+  engine  -> channel  [label="arena +\nroster events"];
+  channel -> events   [label="poll"];
+  snapshot -> state   [label="read"];
+  registry -> state   [label="roster", style=dashed];
+}

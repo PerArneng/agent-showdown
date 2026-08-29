@@ -1,0 +1,27 @@
+/* The arena is always on. It only ever pauses for want of robots. Rendered to ../img/arena-state.svg */
+digraph arena_state {
+  bgcolor="transparent";
+  rankdir=LR;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=11, style="filled", color="#00000000", fontcolor="#1a1a1a"];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  boot    [label="", shape=circle, fillcolor="#1a1a1a", width=0.22];
+  paused  [label="PAUSED\nnobody registered\nnothing is played", shape=box, style="rounded,filled", fillcolor="#f7e3c0"];
+  playing [label="PLAYING\na match is in flight", shape=box, style="rounded,filled", fillcolor="#d8ecd8"];
+  stopped [label="STOPPED\nprocess shutting down", shape=box, style="rounded,filled", fillcolor="#f6cfcf"];
+  done    [label="", shape=doublecircle, fillcolor="#1a1a1a", width=0.22];
+
+  boot    -> paused  [label="server starts,\nconfig robots registered"];
+  paused  -> paused  [label="wait (0.5 s poll)"];
+  paused  -> playing [label="register\n→ player_registered\n→ arena_resumed"];
+  playing -> playing [label="match ends → the next one starts\nback to back, score kept\n\nPOST /api/new-game → game_ended early,\nthen straight into the next match"];
+  playing -> paused  [label="last robot unregistered\nAND match finishes\n→ arena_paused"];
+  playing -> stopped [label="stop_arena"];
+  paused  -> stopped [label="stop_arena"];
+  stopped -> done;
+
+  note [shape=note, fillcolor="#e6e6e6", fontsize=9,
+        label="Unregistering never interrupts a match.\nA Game fixes its contestants when it starts,\nso a leaving robot plays that match out."];
+  playing -> note [style=dashed, arrowhead=none];
+}
