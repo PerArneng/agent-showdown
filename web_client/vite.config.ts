@@ -6,6 +6,7 @@ export default defineConfig({
   // stylesheets from a file:// origin, so a multi-file build cannot be opened from disk --
   // and opening it from disk is what demo mode is for.
   base: "./",
+  assetsInclude: ["**/*.glb"],
   plugins: [viteSingleFile()],
   build: { outDir: "dist", emptyOutDir: true, assetsInlineLimit: Infinity },
 });

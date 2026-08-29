@@ -2,26 +2,21 @@ import { beforeEach, describe, expect, it } from "vitest";
 import demoGame from "../../fixtures/demo-game.json" with { type: "json" };
 import type { GameEvent, GameSnapshot } from "../../src/interfaces/game/index.js";
 import { DefaultEngine } from "../../src/modules/engine/index.js";
-import {
-  BoardRenderer,
-  DefaultStateReducer,
-  HashSpritePicker,
-  Palette,
-} from "../../src/modules/game/index.js";
+import { DefaultStateReducer, HashSpritePicker, Palette } from "../../src/modules/game/index.js";
 import {
   FrozenClock,
   InMemoryConnectionIndicator,
   InMemoryPlayerList,
   InMemoryStartButton,
   InMemoryStatusText,
-  RecordingCanvas,
   RecordingGameApi,
+  RecordingRenderer,
   ScriptedEventStream,
 } from "../fakes/index.js";
 
 /** The whole client, wired as `container.ts` wires it, with fakes at every edge. No DOM. */
 class Fixture {
-  readonly canvas = new RecordingCanvas(100, 100);
+  readonly renderer = new RecordingRenderer();
   readonly api: RecordingGameApi;
   readonly playerList = new InMemoryPlayerList();
   readonly statusText = new InMemoryStatusText();
@@ -39,7 +34,7 @@ class Fixture {
       stream,
       this.api,
       new DefaultStateReducer(new Palette(), new HashSpritePicker()),
-      new BoardRenderer(this.canvas),
+      this.renderer,
       this.playerList,
       this.statusText,
       this.startButton,
@@ -86,9 +81,7 @@ describe("DefaultEngine", () => {
     fixture.engine.connect();
     await fixture.clock.settled();
 
-    expect(fixture.canvas.calls.filter((call) => call.kind === "clear").length).toBeGreaterThan(
-      recorded.length,
-    );
+    expect(fixture.renderer.states.length).toBeGreaterThan(recorded.length);
   });
 
   it("requests a new match via api when button is clicked", async () => {
@@ -254,7 +247,7 @@ describe("DefaultEngine", () => {
       await Promise.resolve();
 
       expect(fixture.api.snapshots).toBe(1);
-      expect(fixture.canvas.calls.length).toBeGreaterThan(0);
+      expect(fixture.renderer.states.length).toBeGreaterThan(0);
       expect(fixture.playerList.shown.map((player) => player.name)).toEqual(["one"]);
     });
 

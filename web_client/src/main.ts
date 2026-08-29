@@ -17,17 +17,12 @@ function elements(): Elements {
   ) {
     throw new Error("the page is missing an element the client needs");
   }
-  const context = canvas.getContext("2d");
-  if (context === null) {
-    throw new Error("this browser has no 2D canvas context");
-  }
-  return { canvas, context, playerList, statusText, startButton, connectionIndicator, document };
+  return { canvas, playerList, statusText, startButton, connectionIndicator, document };
 }
 
-const demo = new URLSearchParams(window.location.search).has("demo");
-const engine = createEngine(elements(), demo);
+const params = new URLSearchParams(window.location.search);
+const demo = params.has("demo");
+const stepParam = params.get("step");
+const stepMs = stepParam !== null ? parseInt(stepParam, 10) : undefined;
+const engine = createEngine(elements(), demo, stepMs);
 engine.connect();
-if (demo) {
-  // Nothing to ask a server for: the recording is already playing.
-  engine.newGame();
-}

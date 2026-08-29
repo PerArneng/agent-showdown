@@ -12,10 +12,14 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "@types/three": "^0.185.4",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
     "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "three": "^0.185.1"
   }
 }

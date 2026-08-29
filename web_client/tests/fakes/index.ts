@@ -5,4 +5,5 @@ export { InMemoryStartButton } from "./in-memory-start-button.js";
 export { InMemoryStatusText } from "./in-memory-status-text.js";
 export { RecordingCanvas } from "./recording-canvas.js";
 export { RecordingGameApi } from "./recording-game-api.js";
+export { RecordingRenderer } from "./recording-renderer.js";
 export { ScriptedEventStream } from "./scripted-event-stream.js";

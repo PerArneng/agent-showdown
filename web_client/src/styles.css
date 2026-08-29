@@ -201,19 +201,25 @@ button#start:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px;
-  background: var(--panel);
+  padding: 16px;
+  background: linear-gradient(180deg, #181c25 0%, #12151c 100%);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: 14px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
 }
 
 canvas#board {
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  max-width: 780px;
+  height: 540px;
   display: block;
-  border-radius: 8px;
-  background: #11141a;
+  border-radius: 10px;
+  background: #131722;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* Roster & Stats Section */
