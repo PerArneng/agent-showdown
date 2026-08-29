@@ -30,11 +30,19 @@ describe("the demo fixture", () => {
       "player_stats",
       "player_moved",
       "player_reasoned",
+      "player_dead",
+      "spell_cast",
+      "player_hit",
+      "player_updated",
       "move_blocked",
       "turn_failed",
       "game_ended",
     ]);
 
     expect(events.filter((event) => !known.has(event.type))).toEqual([]);
+  });
+
+  it("contains spell casting combat events", () => {
+    expect(events.some((event) => event.type === "spell_cast")).toBe(true);
   });
 });

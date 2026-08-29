@@ -4,6 +4,7 @@ import type { Position } from "./position.js";
 export interface PlayerState {
   readonly name: string;
   readonly position: Position;
+  readonly health: number;
   readonly color: string;
   readonly sprite: number;
   /** The last thing this player said about its plan. Empty until it says something. */
@@ -16,4 +17,10 @@ export interface PlayerState {
   readonly turnsPlayed: number;
   /** Average wall seconds per turn from protocol stats. Zero until reported. */
   readonly averageThinkSeconds: number;
+  /** Cumulative eliminations across the series. */
+  readonly eliminations: number;
+  /** Cumulative deaths across the series. */
+  readonly deaths: number;
+  /** Cumulative match wins across the series. */
+  readonly wins: number;
 }

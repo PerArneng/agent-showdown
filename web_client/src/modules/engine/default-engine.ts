@@ -1,3 +1,4 @@
+import type { Clock } from "../../interfaces/clock/index.js";
 import type {
   ConnectionIndicator,
   PlayerList,
@@ -15,11 +16,13 @@ import type {
 import type { GameApi } from "../../interfaces/game_api/index.js";
 
 /**
- * The facade. Holds the current state, and does the same three things for every event: fold it in,
- * draw the board, refresh the sidebar.
+ * The facade. Holds the current state, and orchestrates events, rendering, sidebar updates,
+ * and smooth animations.
  */
 export class DefaultEngine implements Engine {
   private state: ClientState;
+  private readonly queue: GameEvent[] = [];
+  private busy = false;
 
   constructor(
     private readonly stream: EventStream,
@@ -30,6 +33,7 @@ export class DefaultEngine implements Engine {
     private readonly statusText: StatusText,
     private readonly startButton: StartButton,
     private readonly connectionIndicator: ConnectionIndicator,
+    private readonly clock: Clock,
   ) {
     this.state = reducer.initial();
   }
@@ -63,6 +67,77 @@ export class DefaultEngine implements Engine {
   }
 
   private handle(event: GameEvent): void {
+    this.queue.push(event);
+    if (!this.busy) {
+      void this.drain();
+    }
+  }
+
+  private async drain(): Promise<void> {
+    this.busy = true;
+    while (this.queue.length > 0) {
+      const event = this.queue.shift();
+      if (event !== undefined) {
+        await this.processEvent(event);
+      }
+    }
+    this.busy = false;
+  }
+
+  private async processEvent(event: GameEvent): Promise<void> {
+    if (event.type === "player_moved") {
+      const steps = 4;
+      for (let i = 1; i <= steps; i++) {
+        const progress = i / steps;
+        this.renderer.render({
+          ...this.state,
+          effect: {
+            type: "move",
+            player: event.player,
+            from: event.source,
+            to: event.destination,
+            progress,
+          },
+        });
+        await this.clock.sleep(25);
+      }
+    } else if (event.type === "spell_cast") {
+      if (event.path.length > 0) {
+        let currentOrigin = event.origin;
+        for (const dest of event.path) {
+          const steps = 3;
+          for (let i = 1; i <= steps; i++) {
+            const progress = i / steps;
+            this.renderer.render({
+              ...this.state,
+              effect: {
+                type: "fireball",
+                from: currentOrigin,
+                to: dest,
+                progress,
+              },
+            });
+            await this.clock.sleep(20);
+          }
+          currentOrigin = dest;
+        }
+      }
+    } else if (event.type === "player_hit") {
+      const steps = 4;
+      for (let i = 1; i <= steps; i++) {
+        const progress = i / steps;
+        this.renderer.render({
+          ...this.state,
+          effect: {
+            type: "explosion",
+            position: event.position,
+            progress,
+          },
+        });
+        await this.clock.sleep(30);
+      }
+    }
+
     this.show(this.reducer.reduce(this.state, event));
     if (event.type === "game_ended") {
       this.startButton.setEnabled(true);

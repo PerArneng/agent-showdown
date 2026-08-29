@@ -18,6 +18,8 @@ const SHADOW_RADIUS_RATIO = 0.52;
 const SPRITE_SIZE_RATIO = 1.85;
 const SPRITE_VERTICAL_ANCHOR_RATIO = 0.38;
 
+const RUNES = ["᚛", "ᚱ", "ᛟ", "ᚦ", "ᛉ", "ᛋ", "✦", "◈"] as const;
+
 interface IsometricProjection {
   readonly tileWidthHalf: number;
   readonly tileHeightHalf: number;
@@ -43,6 +45,7 @@ export class BoardRenderer implements Renderer {
     this.renderSlab(state.board, proj);
     this.renderTiles(state.board, proj);
     this.renderPlayers(state, proj);
+    this.renderEffects(state, proj);
   }
 
   private createProjection(board: Board): IsometricProjection {
@@ -148,20 +151,75 @@ export class BoardRenderer implements Renderer {
     );
 
     for (const player of sortedPlayers) {
-      const isThinking = state.thinking === player.name;
-      const corners = proj.tileCorners(player.position.x, player.position.y);
-      const centre = proj.tileCentre(player.position.x, player.position.y);
+      const isDead = player.health <= 0;
+      const isThinking = !isDead && state.thinking === player.name;
+
+      // Handle smooth movement interpolation
+      let gx = player.position.x;
+      let gy = player.position.y;
+      if (state.effect?.type === "move" && state.effect.player === player.name) {
+        gx =
+          state.effect.from.x + (state.effect.to.x - state.effect.from.x) * state.effect.progress;
+        gy =
+          state.effect.from.y + (state.effect.to.y - state.effect.from.y) * state.effect.progress;
+      }
+
+      const centre = proj.project(gx + 0.5, gy + 0.5);
+      const corners = proj.tileCorners(Math.round(gx), Math.round(gy));
 
       // Player-colored tile highlight (brighter and prominent border when thinking)
-      const fillColor = isThinking ? `${player.color}66` : `${player.color}35`;
-      const strokeColor = isThinking ? "#ffffff" : `${player.color}dd`;
-      const strokeWidth = isThinking ? 3 : 2;
+      if (!isDead) {
+        const fillColor = isThinking ? `${player.color}66` : `${player.color}35`;
+        const strokeColor = isThinking ? "#ffffff" : `${player.color}dd`;
+        const strokeWidth = isThinking ? 3 : 2;
 
-      this.canvas.fillPolygon(corners, fillColor);
-      this.canvas.strokePolygon(corners, strokeColor, strokeWidth);
+        this.canvas.fillPolygon(corners, fillColor);
+        this.canvas.strokePolygon(corners, strokeColor, strokeWidth);
+      }
 
-      // Radiant energy aura on the ground when player is actively thinking
+      // Active Turn Magical Rune Ring circling the player on ground plane
       if (isThinking) {
+        // Outer glowing rune ring
+        this.canvas.strokeEllipse(
+          centre,
+          proj.tileWidthHalf * 1.05,
+          proj.tileHeightHalf * 1.05,
+          "rgba(255, 215, 0, 0.85)",
+          2,
+        );
+
+        // Inner glowing resonance ring
+        this.canvas.strokeEllipse(
+          centre,
+          proj.tileWidthHalf * 0.72,
+          proj.tileHeightHalf * 0.72,
+          "rgba(76, 141, 255, 0.75)",
+          1.5,
+        );
+
+        // Ethereal magic energy disc
+        this.canvas.fillEllipse(
+          centre,
+          proj.tileWidthHalf * 1.05,
+          proj.tileHeightHalf * 1.05,
+          "rgba(130, 80, 255, 0.18)",
+        );
+
+        // Ancient rune glyphs positioned around the isometric perimeter
+        for (let i = 0; i < 8; i++) {
+          const angle = (i * Math.PI) / 4;
+          const rx = centre.x + Math.cos(angle) * proj.tileWidthHalf * 0.88;
+          const ry = centre.y + Math.sin(angle) * proj.tileHeightHalf * 0.88;
+          this.canvas.fillCircle({ x: rx, y: ry }, 2, "#ffd700");
+          this.canvas.drawText(
+            RUNES[i] ?? "✦",
+            { x: rx, y: ry },
+            "9px monospace",
+            "rgba(255, 255, 255, 0.9)",
+          );
+        }
+
+        // Radiant energy aura under the sprite
         this.canvas.fillEllipse(
           centre,
           proj.tileWidthHalf * 0.75,
@@ -170,30 +228,165 @@ export class BoardRenderer implements Renderer {
         );
       }
 
-      // Soft ground shadow on the square
-      this.canvas.fillEllipse(
-        centre,
-        proj.tileWidthHalf * SHADOW_RADIUS_RATIO,
-        proj.tileHeightHalf * SHADOW_RADIUS_RATIO,
-        SHADOW_COLOR,
-      );
+      // Ground shadow on the square
+      if (!isDead) {
+        this.canvas.fillEllipse(
+          centre,
+          proj.tileWidthHalf * SHADOW_RADIUS_RATIO,
+          proj.tileHeightHalf * SHADOW_RADIUS_RATIO,
+          SHADOW_COLOR,
+        );
+      } else {
+        // Defeated / depleted subtle dark residue
+        this.canvas.fillEllipse(
+          centre,
+          proj.tileWidthHalf * SHADOW_RADIUS_RATIO * 0.7,
+          proj.tileHeightHalf * SHADOW_RADIUS_RATIO * 0.7,
+          "rgba(0, 0, 0, 0.3)",
+        );
+      }
 
-      // Standing sprite upright on top of the square
+      // Standing sprite upright on top of the square (reduced opacity for defeated robots)
       const spriteCentre: Position = {
         x: centre.x,
         y: centre.y - proj.spriteSize * SPRITE_VERTICAL_ANCHOR_RATIO,
       };
-      this.canvas.drawSprite(player.sprite, spriteCentre, proj.spriteSize);
+      this.canvas.drawSprite(player.sprite, spriteCentre, proj.spriteSize, isDead ? 0.35 : 1);
 
-      // Floating thought beacon above active player's head
-      if (isThinking) {
-        const beaconCentre: Position = {
-          x: spriteCentre.x,
-          y: spriteCentre.y - proj.spriteSize * 0.52,
-        };
-        this.canvas.fillCircle(beaconCentre, Math.max(3, proj.spriteSize * 0.1), "#ffd700");
-        this.canvas.fillCircle(beaconCentre, Math.max(1.5, proj.spriteSize * 0.05), "#ffffff");
+      // Mini Health Bar & Indicators
+      if (isDead) {
+        // Skull indicator over defeated robot
+        this.canvas.drawText(
+          "💀",
+          { x: spriteCentre.x, y: spriteCentre.y - proj.spriteSize * 0.46 },
+          "14px sans-serif",
+          "#ef4444",
+        );
+      } else {
+        // Floating mini health bar
+        const barWidth = Math.max(24, Math.round(proj.spriteSize * 0.65));
+        const barHeight = 4;
+        const barX = spriteCentre.x - barWidth / 2;
+        const barY = spriteCentre.y - proj.spriteSize * 0.52;
+        const healthRatio = Math.max(0, Math.min(1, player.health / 100));
+
+        // Health bar track
+        this.canvas.fillPolygon(
+          [
+            { x: barX - 1, y: barY - 1 },
+            { x: barX + barWidth + 1, y: barY - 1 },
+            { x: barX + barWidth + 1, y: barY + barHeight + 1 },
+            { x: barX - 1, y: barY + barHeight + 1 },
+          ],
+          "rgba(0, 0, 0, 0.75)",
+        );
+
+        // Health bar fill
+        const fillWidth = Math.round(barWidth * healthRatio);
+        if (fillWidth > 0) {
+          const hpColor =
+            healthRatio > 0.5 ? "#22c55e" : healthRatio > 0.25 ? "#eab308" : "#ef4444";
+          this.canvas.fillPolygon(
+            [
+              { x: barX, y: barY },
+              { x: barX + fillWidth, y: barY },
+              { x: barX + fillWidth, y: barY + barHeight },
+              { x: barX, y: barY + barHeight },
+            ],
+            hpColor,
+          );
+        }
+
+        // Floating thought beacon above active player's head
+        if (isThinking) {
+          const beaconCentre: Position = {
+            x: spriteCentre.x,
+            y: barY - 8,
+          };
+          this.canvas.fillCircle(beaconCentre, Math.max(3, proj.spriteSize * 0.1), "#ffd700");
+          this.canvas.fillCircle(beaconCentre, Math.max(1.5, proj.spriteSize * 0.05), "#ffffff");
+        }
       }
+    }
+  }
+
+  private renderEffects(state: ClientState, proj: IsometricProjection): void {
+    if (!state.effect) {
+      return;
+    }
+
+    if (state.effect.type === "fireball") {
+      const from = state.effect.from;
+      const to = state.effect.to;
+      const p = state.effect.progress;
+      const gx = from.x + (to.x - from.x) * p;
+      const gy = from.y + (to.y - from.y) * p;
+      const groundPos = proj.project(gx + 0.5, gy + 0.5);
+      const flightPos: Position = {
+        x: groundPos.x,
+        y: groundPos.y - proj.tileHeightHalf * 1.4,
+      };
+
+      // Fiery ground shadow
+      this.canvas.fillEllipse(
+        groundPos,
+        proj.tileWidthHalf * 0.28,
+        proj.tileHeightHalf * 0.28,
+        "rgba(255, 100, 0, 0.35)",
+      );
+
+      // Fiery spark trail behind projectile
+      for (let i = 1; i <= 3; i++) {
+        const trailP = Math.max(0, p - i * 0.12);
+        const tgx = from.x + (to.x - from.x) * trailP;
+        const tgy = from.y + (to.y - from.y) * trailP;
+        const tGround = proj.project(tgx + 0.5, tgy + 0.5);
+        const tFlight: Position = {
+          x: tGround.x,
+          y: tGround.y - proj.tileHeightHalf * 1.4,
+        };
+        this.canvas.fillCircle(
+          tFlight,
+          Math.max(2, proj.tileWidthHalf * 0.12 * (1 - i * 0.25)),
+          "rgba(255, 120, 0, 0.6)",
+        );
+      }
+
+      // Outer fireball glow
+      this.canvas.fillCircle(
+        flightPos,
+        Math.max(8, proj.tileWidthHalf * 0.36),
+        "rgba(255, 80, 0, 0.45)",
+      );
+      // Mid flame
+      this.canvas.fillCircle(flightPos, Math.max(5, proj.tileWidthHalf * 0.22), "#ff6b1a");
+      // Core ember
+      this.canvas.fillCircle(flightPos, Math.max(2.5, proj.tileWidthHalf * 0.11), "#fff7a0");
+    } else if (state.effect.type === "explosion") {
+      const pos = state.effect.position;
+      const p = state.effect.progress;
+      const centre = proj.tileCentre(pos.x, pos.y);
+      const elevated: Position = { x: centre.x, y: centre.y - proj.spriteSize * 0.3 };
+
+      // Expanding ground shockwave ring
+      const shockR = proj.tileWidthHalf * (0.4 + p * 0.9);
+      this.canvas.strokeEllipse(
+        centre,
+        shockR,
+        shockR * 0.5,
+        `rgba(255, 120, 0, ${Math.max(0, 1 - p)})`,
+        3,
+      );
+
+      // Fiery blast burst
+      const burstR = proj.tileWidthHalf * (0.3 + p * 0.6);
+      this.canvas.fillCircle(elevated, burstR, `rgba(255, 80, 0, ${Math.max(0, 0.8 * (1 - p))})`);
+      this.canvas.fillCircle(
+        elevated,
+        burstR * 0.6,
+        `rgba(255, 200, 50, ${Math.max(0, 0.9 * (1 - p))})`,
+      );
+      this.canvas.fillCircle(elevated, burstR * 0.3, `rgba(255, 255, 255, ${Math.max(0, 1 - p)})`);
     }
   }
 }

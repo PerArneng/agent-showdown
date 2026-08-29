@@ -42,6 +42,8 @@ export class DefaultStateReducer implements StateReducer {
                 player.position,
                 player.reasoning,
                 player.think_seconds,
+                undefined,
+                player.health,
               ),
             },
       state,
@@ -58,6 +60,7 @@ export class DefaultStateReducer implements StateReducer {
           ...state,
           board: event.board,
           status: `Playing ${event.max_rounds} rounds.`,
+          playing: true,
           thinking: null,
         };
       case "player_joined":
@@ -85,6 +88,18 @@ export class DefaultStateReducer implements StateReducer {
         return { ...state, players: this.reasoned(state, event.player, event.reasoning) };
       case "move_blocked":
         return state;
+      case "spell_cast":
+        return { ...state, status: `${event.player} cast ${event.spell}.` };
+      case "player_hit":
+        return {
+          ...state,
+          status: `${event.source} hit ${event.player} with ${event.spell} for ${event.damage} damage.`,
+        };
+      case "player_updated":
+        return { ...state, players: this.updatedHealth(state, event.player, event.health) };
+      case "player_dead":
+        // Deadness is derived from health <= 0. player_dead fires when a turn is skipped.
+        return state;
       case "turn_failed":
         return { ...state, status: `${event.player} failed its turn: ${event.reason}` };
       case "game_ended":
@@ -107,9 +122,23 @@ export class DefaultStateReducer implements StateReducer {
   private joined(state: ClientState, name: string, position: Position): readonly PlayerState[] {
     const known = state.players.find((player) => player.name === name);
     if (known !== undefined) {
-      return this.moved(state, name, position);
+      return this.rejoined(state, name, position);
     }
     return this.introduce(state, name, position, "");
+  }
+
+  private rejoined(state: ClientState, name: string, position: Position): readonly PlayerState[] {
+    return state.players.map((player) =>
+      player.name === name
+        ? {
+            ...player,
+            position,
+            health: 100,
+            thinkSeconds: 0,
+            reasoning: "",
+          }
+        : player,
+    );
   }
 
   private moved(state: ClientState, name: string, position: Position): readonly PlayerState[] {
@@ -139,6 +168,13 @@ export class DefaultStateReducer implements StateReducer {
     );
   }
 
+  private updatedHealth(state: ClientState, name: string, health: number): readonly PlayerState[] {
+    if (!state.players.some((player) => player.name === name)) {
+      return this.introduce(state, name, { x: 0, y: 0 }, "", 0, undefined, health);
+    }
+    return state.players.map((player) => (player.name === name ? { ...player, health } : player));
+  }
+
   private stats(state: ClientState, name: string, stats: PlayerStats): readonly PlayerState[] {
     // A client that connected mid-game may hear stats before it sees the player anywhere.
     if (!state.players.some((player) => player.name === name)) {
@@ -151,6 +187,9 @@ export class DefaultStateReducer implements StateReducer {
             turnsPlayed: stats.turns,
             totalThinkSeconds: stats.total_seconds,
             averageThinkSeconds: stats.average_seconds,
+            eliminations: stats.eliminations,
+            deaths: stats.deaths,
+            wins: stats.wins,
           }
         : player,
     );
@@ -164,6 +203,7 @@ export class DefaultStateReducer implements StateReducer {
     reasoning: string,
     thinkSeconds = 0,
     stats?: PlayerStats,
+    health = 100,
   ): readonly PlayerState[] {
     const color = this.palette.colorFor(state.players.length);
     const sprite = this.spritePicker.pick(
@@ -173,11 +213,15 @@ export class DefaultStateReducer implements StateReducer {
     const totalThinkSeconds = stats?.total_seconds ?? 0;
     const turnsPlayed = stats?.turns ?? 0;
     const averageThinkSeconds = stats?.average_seconds ?? 0;
+    const eliminations = stats?.eliminations ?? 0;
+    const deaths = stats?.deaths ?? 0;
+    const wins = stats?.wins ?? 0;
     return [
       ...state.players,
       {
         name,
         position,
+        health,
         color,
         sprite,
         reasoning,
@@ -185,6 +229,9 @@ export class DefaultStateReducer implements StateReducer {
         totalThinkSeconds,
         turnsPlayed,
         averageThinkSeconds,
+        eliminations,
+        deaths,
+        wins,
       },
     ];
   }

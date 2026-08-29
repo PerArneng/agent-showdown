@@ -33,7 +33,8 @@ body {
 }
 
 .app-layout {
-  max-width: 1200px;
+  max-width: 1440px;
+  width: 100%;
   margin: 0 auto;
   padding: 16px 24px 32px;
   display: flex;
@@ -256,13 +257,14 @@ canvas#board {
 /* Stats Table */
 .stats-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
   font-size: 13px;
 }
 
 .stats-table th {
-  padding: 10px 14px;
+  padding: 10px 10px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -270,15 +272,71 @@ canvas#board {
   color: var(--muted);
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stats-table td {
-  padding: 12px 14px;
+  padding: 10px 10px;
   border-bottom: 1px solid rgba(38, 43, 53, 0.6);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Explicit stable column widths */
+.col-agent {
+  width: 170px;
+}
+
+.col-status {
+  width: 110px;
+}
+
+.col-health {
+  width: 110px;
+}
+
+.col-pos {
+  width: 85px;
+}
+
+.col-last-turn {
+  width: 130px;
+}
+
+.col-avg-turn {
+  width: 90px;
+}
+
+.col-total-time {
+  width: 95px;
+}
+
+.col-turns {
+  width: 70px;
+}
+
+.col-eliminations {
+  width: 70px;
+}
+
+.col-deaths {
+  width: 75px;
+}
+
+.col-wins {
+  width: 70px;
+}
+
+.col-plan {
+  width: auto;
+}
+
+
 .player-row {
+  height: 48px;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease;
@@ -286,6 +344,15 @@ canvas#board {
 
 .player-row:hover {
   background: rgba(255, 255, 255, 0.02);
+}
+
+.player-row.is-dead {
+  opacity: 0.6;
+  filter: grayscale(35%);
+}
+
+.player-row.is-dead .player-name {
+  color: var(--muted);
 }
 
 .player-row.is-thinking {
@@ -297,21 +364,23 @@ canvas#board {
 .cell-agent {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .sprite-avatar {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   object-fit: contain;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.06);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
   transition: transform 0.15s ease;
+  flex: none;
 }
 
 .player-row:hover .sprite-avatar {
@@ -328,19 +397,29 @@ canvas#board {
 .player-name {
   font-weight: 600;
   letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Status Badge */
+.cell-status {
+  width: 105px;
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 3px 9px;
+  width: 85px;
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .status-badge.thinking {
@@ -371,12 +450,102 @@ canvas#board {
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
+.status-badge.defeated {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Health Column */
+.cell-health {
+  width: 110px;
+}
+
+.health-val {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.health-bar-track {
+  display: block;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 90px;
+}
+
+.health-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.health-bar-fill.hp-high {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.health-bar-fill.hp-mid {
+  background: #eab308;
+  box-shadow: 0 0 6px rgba(234, 179, 8, 0.4);
+}
+
+.health-bar-fill.hp-low {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+.health-bar-fill.hp-dead {
+  background: #4b5563;
+  width: 0% !important;
+}
+
+/* Series Stats Badges */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-badge.elims {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.stat-badge.deaths {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.stat-badge.wins {
+  background: rgba(234, 179, 8, 0.12);
+  color: #fde047;
+  border: 1px solid rgba(234, 179, 8, 0.25);
+}
+
 /* Numeric Columns */
 .cell-pos,
 .cell-last-turn,
 .cell-avg-turn,
 .cell-total-time,
-.cell-turns {
+.cell-turns,
+.cell-elims,
+.cell-deaths,
+.cell-wins {
   font-variant-numeric: tabular-nums;
   color: var(--text);
   white-space: nowrap;
@@ -388,7 +557,7 @@ canvas#board {
 }
 
 .cell-last-turn {
-  min-width: 140px;
+  width: 130px;
 }
 
 .think-time-val {
@@ -403,7 +572,7 @@ canvas#board {
   border-radius: 2px;
   margin-top: 4px;
   overflow: hidden;
-  max-width: 100px;
+  max-width: 90px;
 }
 
 .think-bar-fill {
@@ -423,7 +592,7 @@ canvas#board {
 
 /* Reasoning */
 .cell-reasoning {
-  max-width: 320px;
+  width: auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -433,6 +602,10 @@ canvas#board {
   font-size: 12px;
   font-style: italic;
   color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 @keyframes pulse-glow {

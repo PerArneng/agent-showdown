@@ -57,5 +57,6 @@ export function createEngine(elements: Elements, demo: boolean): Engine {
     new ElementStatusText(elements.statusText),
     new ElementStartButton(elements.startButton),
     new ElementConnectionIndicator(elements.connectionIndicator),
+    clock,
   );
 }

@@ -5,6 +5,7 @@ import type { Position } from "./position.js";
 export interface PlayerSnapshot {
   readonly name: string;
   readonly position: Position;
+  readonly health: number;
   readonly reasoning: string;
   readonly think_seconds: number;
 }

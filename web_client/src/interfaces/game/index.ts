@@ -5,6 +5,8 @@ export type {
   GameEvent,
   GameStartedEvent,
   MoveBlockedEvent,
+  PlayerDeadEvent,
+  PlayerHitEvent,
   PlayerJoinedEvent,
   PlayerMovedEvent,
   PlayerReasonedEvent,
@@ -12,7 +14,9 @@ export type {
   PlayerStatsEvent,
   PlayerTurnEndedEvent,
   PlayerTurnStartedEvent,
+  PlayerUpdatedEvent,
   RoundStartedEvent,
+  SpellCastEvent,
   TurnFailedEvent,
 } from "./game-event.js";
 export type { GameSnapshot, PlayerSnapshot } from "./game-snapshot.js";
@@ -21,3 +25,4 @@ export type { Position } from "./position.js";
 export type { Renderer } from "./renderer.js";
 export type { SpritePicker } from "./sprite-picker.js";
 export type { StateReducer } from "./state-reducer.js";
+export type { VisualEffect } from "./visual-effect.js";

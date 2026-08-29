@@ -36,7 +36,7 @@ describe("BoardRenderer", () => {
     expect(canvas.lines()).toHaveLength(1);
   });
 
-  it("renders player tile highlight, shadow ellipse, and standing character sprite", () => {
+  it("renders player tile highlight, shadow ellipse, standing character sprite, and health bar", () => {
     const canvas = new RecordingCanvas(400, 400);
 
     new BoardRenderer(canvas).render(
@@ -46,6 +46,7 @@ describe("BoardRenderer", () => {
           {
             name: "one",
             position: { x: 0, y: 0 },
+            health: 100,
             color: "#4c8dff",
             sprite: 2,
             reasoning: "",
@@ -53,6 +54,9 @@ describe("BoardRenderer", () => {
             totalThinkSeconds: 0,
             turnsPlayed: 0,
             averageThinkSeconds: 0,
+            eliminations: 0,
+            deaths: 0,
+            wins: 0,
           },
         ],
       }),
@@ -67,6 +71,7 @@ describe("BoardRenderer", () => {
     const sprites = canvas.sprites();
     expect(sprites).toHaveLength(1);
     expect(sprites[0]?.sprite).toBe(2);
+    expect(sprites[0]?.opacity).toBe(1);
 
     const shadow = ellipses[0]!;
     const sprite = sprites[0]!;
@@ -74,9 +79,12 @@ describe("BoardRenderer", () => {
     expect(sprite.centre.x).toBeCloseTo(shadow.centre.x, 2);
     // Sprite center is elevated above the shadow (standing upright on the square)
     expect(sprite.centre.y).toBeLessThan(shadow.centre.y);
+
+    // Mini health bar polygons (track + fill)
+    expect(canvas.polygons().length).toBeGreaterThanOrEqual(2);
   });
 
-  it("draws active aura and beacon above sprite when player is thinking", () => {
+  it("draws active isometric magical rune ring and runes when player is thinking", () => {
     const canvas = new RecordingCanvas(400, 400);
 
     new BoardRenderer(canvas).render(
@@ -87,6 +95,7 @@ describe("BoardRenderer", () => {
           {
             name: "active-agent",
             position: { x: 2, y: 2 },
+            health: 80,
             color: "#4c8dff",
             sprite: 3,
             reasoning: "calculating move",
@@ -94,27 +103,111 @@ describe("BoardRenderer", () => {
             totalThinkSeconds: 0,
             turnsPlayed: 0,
             averageThinkSeconds: 0,
+            eliminations: 0,
+            deaths: 0,
+            wins: 0,
           },
         ],
       }),
     );
 
-    // 2 ellipses: 1 radiant energy aura + 1 soft ground shadow
-    const ellipses = canvas.ellipses();
-    expect(ellipses).toHaveLength(2);
-    expect(ellipses[0]?.color).toBe("rgba(255, 215, 0, 0.35)");
+    // Concentric glowing rune rings
+    const strokeEllipses = canvas.strokeEllipses();
+    expect(strokeEllipses.length).toBeGreaterThanOrEqual(2);
+    expect(strokeEllipses[0]?.color).toBe("rgba(255, 215, 0, 0.85)");
+    expect(strokeEllipses[1]?.color).toBe("rgba(76, 141, 255, 0.75)");
+
+    // Rune glyphs around perimeter
+    const texts = canvas.texts();
+    expect(texts.length).toBe(8);
 
     // Floating thought beacon circles (outer + inner)
     const circles = canvas.circles();
-    expect(circles).toHaveLength(2);
-    expect(circles[0]?.color).toBe("#ffd700");
-    expect(circles[1]?.color).toBe("#ffffff");
+    expect(circles.some((c) => c.color === "#ffd700")).toBe(true);
+    expect(circles.some((c) => c.color === "#ffffff")).toBe(true);
 
     // Prominent stroke on the tile
     const strokePolygons = canvas.strokePolygons();
     const playerTileStroke = strokePolygons.at(-1);
     expect(playerTileStroke?.color).toBe("#ffffff");
     expect(playerTileStroke?.lineWidth).toBe(3);
+  });
+
+  it("renders dead robots with ghost opacity and skull indicator", () => {
+    const canvas = new RecordingCanvas(400, 400);
+
+    new BoardRenderer(canvas).render(
+      state({
+        board: { width: 10, height: 10 },
+        players: [
+          {
+            name: "fallen-bot",
+            position: { x: 3, y: 3 },
+            health: 0,
+            color: "#4c8dff",
+            sprite: 4,
+            reasoning: "",
+            thinkSeconds: 0,
+            totalThinkSeconds: 0,
+            turnsPlayed: 0,
+            averageThinkSeconds: 0,
+            eliminations: 0,
+            deaths: 1,
+            wins: 0,
+          },
+        ],
+      }),
+    );
+
+    const sprites = canvas.sprites();
+    expect(sprites).toHaveLength(1);
+    expect(sprites[0]?.opacity).toBe(0.35);
+
+    const texts = canvas.texts();
+    expect(texts.some((t) => t.text === "💀")).toBe(true);
+  });
+
+  it("renders in-flight fireball effects", () => {
+    const canvas = new RecordingCanvas(400, 400);
+
+    new BoardRenderer(canvas).render(
+      state({
+        board: { width: 10, height: 10 },
+        effect: {
+          type: "fireball",
+          from: { x: 0, y: 0 },
+          to: { x: 3, y: 0 },
+          progress: 0.5,
+        },
+      }),
+    );
+
+    // Fireball glows and spark circles
+    const circles = canvas.circles();
+    expect(circles.length).toBeGreaterThanOrEqual(4);
+    expect(circles.some((c) => c.color === "#ff6b1a")).toBe(true);
+    expect(circles.some((c) => c.color === "#fff7a0")).toBe(true);
+  });
+
+  it("renders hit explosion shockwave and blast burst", () => {
+    const canvas = new RecordingCanvas(400, 400);
+
+    new BoardRenderer(canvas).render(
+      state({
+        board: { width: 10, height: 10 },
+        effect: {
+          type: "explosion",
+          position: { x: 4, y: 4 },
+          progress: 0.2,
+        },
+      }),
+    );
+
+    const strokeEllipses = canvas.strokeEllipses();
+    expect(strokeEllipses.length).toBeGreaterThanOrEqual(1);
+
+    const circles = canvas.circles();
+    expect(circles.length).toBeGreaterThanOrEqual(3);
   });
 
   it("depth-sorts players so characters in front render on top of characters behind", () => {
@@ -128,6 +221,7 @@ describe("BoardRenderer", () => {
           {
             name: "front",
             position: { x: 5, y: 5 },
+            health: 100,
             color: "#ff5d7a",
             sprite: 1,
             reasoning: "",
@@ -135,10 +229,14 @@ describe("BoardRenderer", () => {
             totalThinkSeconds: 0,
             turnsPlayed: 0,
             averageThinkSeconds: 0,
+            eliminations: 0,
+            deaths: 0,
+            wins: 0,
           },
           {
             name: "back",
             position: { x: 0, y: 0 },
+            health: 100,
             color: "#4c8dff",
             sprite: 0,
             reasoning: "",
@@ -146,6 +244,9 @@ describe("BoardRenderer", () => {
             totalThinkSeconds: 0,
             turnsPlayed: 0,
             averageThinkSeconds: 0,
+            eliminations: 0,
+            deaths: 0,
+            wins: 0,
           },
         ],
       }),

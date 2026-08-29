@@ -12,8 +12,23 @@ export interface Canvas {
   clear(): void;
   strokeLine(from: Position, to: Position, color: string, lineWidth?: number): void;
   fillCircle(centre: Position, radius: number, color: string): void;
-  drawSprite(sprite: number, centre: Position, size: number): void;
+  strokeCircle(centre: Position, radius: number, color: string, lineWidth?: number): void;
+  drawSprite(sprite: number, centre: Position, size: number, opacity?: number): void;
   fillPolygon(points: readonly Position[], color: string): void;
   strokePolygon(points: readonly Position[], color: string, lineWidth?: number): void;
   fillEllipse(centre: Position, radiusX: number, radiusY: number, color: string): void;
+  strokeEllipse(
+    centre: Position,
+    radiusX: number,
+    radiusY: number,
+    color: string,
+    lineWidth?: number,
+  ): void;
+  drawText(
+    text: string,
+    centre: Position,
+    font: string,
+    color: string,
+    align?: "left" | "center" | "right",
+  ): void;
 }

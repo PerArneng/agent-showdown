@@ -10,7 +10,7 @@ export class FrozenClock implements Clock {
 
   /** Let every pending replay run to completion. Nothing here actually waits. */
   async settled(): Promise<void> {
-    for (let turn = 0; turn < 100; turn++) {
+    for (let turn = 0; turn < 1000; turn++) {
       await Promise.resolve();
     }
   }

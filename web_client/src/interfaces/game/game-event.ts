@@ -38,6 +38,40 @@ export interface PlayerStats {
   readonly turns: number;
   readonly total_seconds: number;
   readonly average_seconds: number;
+  readonly eliminations: number;
+  readonly deaths: number;
+  readonly wins: number;
+}
+
+export interface PlayerDeadEvent {
+  readonly type: "player_dead";
+  readonly player: string;
+}
+
+/** A spell in flight. `path` is every square it travelled through, in order. */
+export interface SpellCastEvent {
+  readonly type: "spell_cast";
+  readonly player: string;
+  readonly spell: string;
+  readonly direction: string;
+  readonly origin: Position;
+  readonly path: readonly Position[];
+}
+
+/** `player` was hit, `source` cast it. */
+export interface PlayerHitEvent {
+  readonly type: "player_hit";
+  readonly player: string;
+  readonly source: string;
+  readonly spell: string;
+  readonly damage: number;
+  readonly position: Position;
+}
+
+export interface PlayerUpdatedEvent {
+  readonly type: "player_updated";
+  readonly player: string;
+  readonly health: number;
 }
 
 export interface PlayerStatsEvent {
@@ -86,6 +120,10 @@ export type GameEvent =
   | PlayerStatsEvent
   | PlayerMovedEvent
   | PlayerReasonedEvent
+  | PlayerDeadEvent
+  | SpellCastEvent
+  | PlayerHitEvent
+  | PlayerUpdatedEvent
   | MoveBlockedEvent
   | TurnFailedEvent
   | GameEndedEvent;

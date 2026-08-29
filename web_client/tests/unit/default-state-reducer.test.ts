@@ -144,7 +144,7 @@ describe("DefaultStateReducer", () => {
     expect(state.players[1]?.thinkSeconds).toBe(0);
   });
 
-  it("updates player running totals and average from player_stats protocol event", () => {
+  it("updates player running totals, average, and combat series stats from player_stats", () => {
     const joined = after(empty, {
       type: "player_joined",
       player: "one",
@@ -154,19 +154,150 @@ describe("DefaultStateReducer", () => {
     const state = after(joined, {
       type: "player_stats",
       player: "one",
-      stats: { turns: 3, total_seconds: 12.5, average_seconds: 4.1666666 },
+      stats: {
+        turns: 3,
+        total_seconds: 12.5,
+        average_seconds: 4.1666666,
+        eliminations: 2,
+        deaths: 1,
+        wins: 1,
+      },
     });
 
     expect(state.players[0]?.turnsPlayed).toBe(3);
     expect(state.players[0]?.totalThinkSeconds).toBe(12.5);
     expect(state.players[0]?.averageThinkSeconds).toBe(4.1666666);
+    expect(state.players[0]?.eliminations).toBe(2);
+    expect(state.players[0]?.deaths).toBe(1);
+    expect(state.players[0]?.wins).toBe(1);
+  });
+
+  it("updates player health from player_updated", () => {
+    const joined = after(empty, {
+      type: "player_joined",
+      player: "one",
+      position: { x: 0, y: 0 },
+    });
+
+    expect(joined.players[0]?.health).toBe(100);
+
+    const damaged = after(joined, {
+      type: "player_updated",
+      player: "one",
+      health: 60,
+    });
+    expect(damaged.players[0]?.health).toBe(60);
+
+    const eliminated = after(damaged, {
+      type: "player_updated",
+      player: "one",
+      health: 0,
+    });
+    expect(eliminated.players[0]?.health).toBe(0);
+  });
+
+  it("adopts a player seen first in player_updated", () => {
+    const state = after(empty, {
+      type: "player_updated",
+      player: "late",
+      health: 45,
+    });
+
+    expect(state.players).toHaveLength(1);
+    expect(state.players[0]?.name).toBe("late");
+    expect(state.players[0]?.health).toBe(45);
+  });
+
+  it("reports spell casting in the status line", () => {
+    const state = after(empty, {
+      type: "spell_cast",
+      player: "caster",
+      spell: "fireball",
+      direction: "RIGHT",
+      origin: { x: 0, y: 0 },
+      path: [
+        { x: 1, y: 0 },
+        { x: 2, y: 0 },
+      ],
+    });
+
+    expect(state.status).toBe("caster cast fireball.");
+  });
+
+  it("reports player hit in the status line", () => {
+    const state = after(empty, {
+      type: "player_hit",
+      player: "target",
+      source: "caster",
+      spell: "fireball",
+      damage: 40,
+      position: { x: 2, y: 0 },
+    });
+
+    expect(state.status).toBe("caster hit target with fireball for 40 damage.");
+  });
+
+  it("leaves state intact on player_dead skip notification", () => {
+    const joined = after(
+      empty,
+      { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
+      { type: "player_updated", player: "one", health: 0 },
+    );
+
+    const skipped = after(joined, { type: "player_dead", player: "one" });
+    expect(skipped.players[0]?.health).toBe(0);
+    expect(skipped.players[0]?.position).toEqual({ x: 0, y: 0 });
+  });
+
+  it("resets player position and health on new match join while preserving cumulative series stats", () => {
+    const match1 = after(
+      empty,
+      { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
+      {
+        type: "player_stats",
+        player: "one",
+        stats: {
+          turns: 5,
+          total_seconds: 10.0,
+          average_seconds: 2.0,
+          eliminations: 3,
+          deaths: 0,
+          wins: 1,
+        },
+      },
+      { type: "player_moved", player: "one", source: { x: 0, y: 0 }, destination: { x: 4, y: 4 } },
+      { type: "player_updated", player: "one", health: 20 },
+      { type: "game_ended", rounds_played: 10 },
+    );
+
+    expect(match1.players[0]?.position).toEqual({ x: 4, y: 4 });
+    expect(match1.players[0]?.health).toBe(20);
+
+    const match2 = after(
+      match1,
+      { type: "game_started", board: { width: 10, height: 10 }, max_rounds: 10 },
+      { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
+    );
+
+    expect(match2.players[0]?.position).toEqual({ x: 0, y: 0 });
+    expect(match2.players[0]?.health).toBe(100);
+    expect(match2.players[0]?.eliminations).toBe(3);
+    expect(match2.players[0]?.wins).toBe(1);
+    expect(match2.players[0]?.turnsPlayed).toBe(5);
   });
 
   it("adopts a player whose stats arrive before it is seen anywhere", () => {
     const state = after(empty, {
       type: "player_stats",
       player: "late",
-      stats: { turns: 2, total_seconds: 6.0, average_seconds: 3.0 },
+      stats: {
+        turns: 2,
+        total_seconds: 6.0,
+        average_seconds: 3.0,
+        eliminations: 0,
+        deaths: 0,
+        wins: 0,
+      },
     });
 
     expect(state.players).toHaveLength(1);
@@ -246,10 +377,11 @@ describe("DefaultStateReducer", () => {
         {
           name: "one",
           position: { x: 1, y: 2 },
+          health: 100,
           reasoning: "heading for the middle",
           think_seconds: 1.5,
         },
-        { name: "two", position: { x: 9, y: 9 }, reasoning: "", think_seconds: 0 },
+        { name: "two", position: { x: 9, y: 9 }, health: 100, reasoning: "", think_seconds: 0 },
       ],
     };
 

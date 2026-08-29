@@ -34,29 +34,47 @@
   {
     "type": "player_reasoned",
     "player": "dummy-1",
-    "reasoning": "no plan, wandering UP_RIGHT"
+    "reasoning": "Advancing towards the center"
   },
   {
-    "type": "move_blocked",
+    "type": "player_moved",
     "player": "dummy-1",
-    "position": {
+    "source": {
       "x": 0,
       "y": 0
     },
-    "direction": "UP_RIGHT"
+    "destination": {
+      "x": 1,
+      "y": 1
+    }
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 1,
+      "y": 1
+    },
+    "destination": {
+      "x": 2,
+      "y": 2
+    }
   },
   {
     "type": "player_turn_ended",
     "player": "dummy-1",
-    "seconds": 0.08
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "dummy-1",
     "stats": {
       "turns": 1,
-      "total_seconds": 0.08,
-      "average_seconds": 0.08
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -66,7 +84,7 @@
   {
     "type": "player_reasoned",
     "player": "simple-strands-1",
-    "reasoning": "the top-left corner is unclaimed"
+    "reasoning": "Approaching battle corridor"
   },
   {
     "type": "player_moved",
@@ -81,68 +99,6 @@
     }
   },
   {
-    "type": "player_turn_ended",
-    "player": "simple-strands-1",
-    "seconds": 1.85
-  },
-  {
-    "type": "player_stats",
-    "player": "simple-strands-1",
-    "stats": {
-      "turns": 1,
-      "total_seconds": 1.85,
-      "average_seconds": 1.85
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 2
-  },
-  {
-    "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering RIGHT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 0,
-      "y": 0
-    },
-    "destination": {
-      "x": 1,
-      "y": 0
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.05
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 2,
-      "total_seconds": 0.13,
-      "average_seconds": 0.065
-    }
-  },
-  {
-    "type": "player_turn_started",
-    "player": "simple-strands-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "simple-strands-1",
-    "reasoning": "staying on the diagonal"
-  },
-  {
     "type": "player_moved",
     "player": "simple-strands-1",
     "source": {
@@ -157,15 +113,110 @@
   {
     "type": "player_turn_ended",
     "player": "simple-strands-1",
-    "seconds": 2.15
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 1,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 2
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "Taking defensive stance at (6, 6)"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 7,
+      "y": 7
+    },
+    "destination": {
+      "x": 6,
+      "y": 6
+    }
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "simple-strands-1",
     "stats": {
       "turns": 2,
-      "total_seconds": 4.0,
-      "average_seconds": 2.0
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Closing distance to target"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 2,
+      "y": 2
+    },
+    "destination": {
+      "x": 3,
+      "y": 3
+    }
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 3,
+      "y": 3
+    },
+    "destination": {
+      "x": 4,
+      "y": 4
+    }
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 2,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -179,32 +230,59 @@
   {
     "type": "player_reasoned",
     "player": "dummy-1",
-    "reasoning": "no plan, wandering DOWN"
+    "reasoning": "Target in range (distance 2), casting Fireball!"
   },
   {
-    "type": "player_moved",
+    "type": "spell_cast",
     "player": "dummy-1",
-    "source": {
-      "x": 1,
-      "y": 0
+    "spell": "fireball",
+    "direction": "DOWN_RIGHT",
+    "origin": {
+      "x": 4,
+      "y": 4
     },
-    "destination": {
-      "x": 1,
-      "y": 1
+    "path": [
+      {
+        "x": 5,
+        "y": 5
+      },
+      {
+        "x": 6,
+        "y": 6
+      }
+    ]
+  },
+  {
+    "type": "player_hit",
+    "player": "simple-strands-1",
+    "source": "dummy-1",
+    "spell": "fireball",
+    "damage": 10,
+    "position": {
+      "x": 6,
+      "y": 6
     }
+  },
+  {
+    "type": "player_updated",
+    "player": "simple-strands-1",
+    "health": 90
   },
   {
     "type": "player_turn_ended",
     "player": "dummy-1",
-    "seconds": 0.12
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "dummy-1",
     "stats": {
       "turns": 3,
-      "total_seconds": 0.25,
-      "average_seconds": 0.08333333333333333
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -214,7 +292,483 @@
   {
     "type": "player_reasoned",
     "player": "simple-strands-1",
-    "reasoning": "edging west while I have room"
+    "reasoning": "Countering incoming spell with Fireball!"
+  },
+  {
+    "type": "spell_cast",
+    "player": "simple-strands-1",
+    "spell": "fireball",
+    "direction": "UP_LEFT",
+    "origin": {
+      "x": 6,
+      "y": 6
+    },
+    "path": [
+      {
+        "x": 5,
+        "y": 5
+      },
+      {
+        "x": 4,
+        "y": 4
+      }
+    ]
+  },
+  {
+    "type": "player_hit",
+    "player": "dummy-1",
+    "source": "simple-strands-1",
+    "spell": "fireball",
+    "damage": 10,
+    "position": {
+      "x": 4,
+      "y": 4
+    }
+  },
+  {
+    "type": "player_updated",
+    "player": "dummy-1",
+    "health": 90
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 3,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 4
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "Direct hit sustained! Counter-attacking with Fireball!"
+  },
+  {
+    "type": "spell_cast",
+    "player": "simple-strands-1",
+    "spell": "fireball",
+    "direction": "UP_LEFT",
+    "origin": {
+      "x": 6,
+      "y": 6
+    },
+    "path": [
+      {
+        "x": 5,
+        "y": 5
+      },
+      {
+        "x": 4,
+        "y": 4
+      }
+    ]
+  },
+  {
+    "type": "player_hit",
+    "player": "dummy-1",
+    "source": "simple-strands-1",
+    "spell": "fireball",
+    "damage": 10,
+    "position": {
+      "x": 4,
+      "y": 4
+    }
+  },
+  {
+    "type": "player_updated",
+    "player": "dummy-1",
+    "health": 80
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 4,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Maintaining barrage with secondary fireball!"
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "DOWN_RIGHT",
+    "origin": {
+      "x": 4,
+      "y": 4
+    },
+    "path": [
+      {
+        "x": 5,
+        "y": 5
+      },
+      {
+        "x": 6,
+        "y": 6
+      }
+    ]
+  },
+  {
+    "type": "player_hit",
+    "player": "simple-strands-1",
+    "source": "dummy-1",
+    "spell": "fireball",
+    "damage": 10,
+    "position": {
+      "x": 6,
+      "y": 6
+    }
+  },
+  {
+    "type": "player_updated",
+    "player": "simple-strands-1",
+    "health": 80
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 4,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 5
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Pressing forward into corridor"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 4,
+      "y": 4
+    },
+    "destination": {
+      "x": 4,
+      "y": 5
+    }
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "RIGHT",
+    "origin": {
+      "x": 4,
+      "y": 5
+    },
+    "path": [
+      {
+        "x": 5,
+        "y": 5
+      },
+      {
+        "x": 6,
+        "y": 5
+      },
+      {
+        "x": 7,
+        "y": 5
+      }
+    ]
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 5,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "Falling back along lower boundary"
+  },
+  {
+    "type": "player_moved",
+    "player": "simple-strands-1",
+    "source": {
+      "x": 6,
+      "y": 6
+    },
+    "destination": {
+      "x": 7,
+      "y": 7
+    }
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 5,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 6
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "Returning fire from cover"
+  },
+  {
+    "type": "spell_cast",
+    "player": "simple-strands-1",
+    "spell": "fireball",
+    "direction": "UP_LEFT",
+    "origin": {
+      "x": 7,
+      "y": 7
+    },
+    "path": [
+      {
+        "x": 6,
+        "y": 6
+      },
+      {
+        "x": 5,
+        "y": 5
+      },
+      {
+        "x": 4,
+        "y": 4
+      }
+    ]
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 6,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Flanking right vector"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 4,
+      "y": 5
+    },
+    "destination": {
+      "x": 5,
+      "y": 5
+    }
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "DOWN_RIGHT",
+    "origin": {
+      "x": 5,
+      "y": 5
+    },
+    "path": [
+      {
+        "x": 6,
+        "y": 6
+      },
+      {
+        "x": 7,
+        "y": 7
+      }
+    ]
+  },
+  {
+    "type": "player_hit",
+    "player": "simple-strands-1",
+    "source": "dummy-1",
+    "spell": "fireball",
+    "damage": 10,
+    "position": {
+      "x": 7,
+      "y": 7
+    }
+  },
+  {
+    "type": "player_updated",
+    "player": "simple-strands-1",
+    "health": 70
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 6,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "round_started",
+    "round_number": 7
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Casting fireball barrage"
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "UP_RIGHT",
+    "origin": {
+      "x": 5,
+      "y": 5
+    },
+    "path": [
+      {
+        "x": 6,
+        "y": 4
+      },
+      {
+        "x": 7,
+        "y": 3
+      },
+      {
+        "x": 8,
+        "y": 2
+      }
+    ]
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 7,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "simple-strands-1",
+    "reasoning": "Evasive repositioning"
   },
   {
     "type": "player_moved",
@@ -231,311 +785,18 @@
   {
     "type": "player_turn_ended",
     "player": "simple-strands-1",
-    "seconds": 1.42
-  },
-  {
-    "type": "player_stats",
-    "player": "simple-strands-1",
-    "stats": {
-      "turns": 3,
-      "total_seconds": 5.42,
-      "average_seconds": 1.8066666666666666
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 4
-  },
-  {
-    "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering RIGHT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 1,
-      "y": 1
-    },
-    "destination": {
-      "x": 2,
-      "y": 1
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.09
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 4,
-      "total_seconds": 0.34,
-      "average_seconds": 0.085
-    }
-  },
-  {
-    "type": "player_turn_started",
-    "player": "simple-strands-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "simple-strands-1",
-    "reasoning": "north again"
-  },
-  {
-    "type": "player_moved",
-    "player": "simple-strands-1",
-    "source": {
-      "x": 6,
-      "y": 7
-    },
-    "destination": {
-      "x": 6,
-      "y": 6
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "simple-strands-1",
-    "seconds": 2.65
-  },
-  {
-    "type": "player_stats",
-    "player": "simple-strands-1",
-    "stats": {
-      "turns": 4,
-      "total_seconds": 8.07,
-      "average_seconds": 2.0175
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 5
-  },
-  {
-    "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering DOWN_RIGHT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 2,
-      "y": 1
-    },
-    "destination": {
-      "x": 3,
-      "y": 2
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.07
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 5,
-      "total_seconds": 0.41,
-      "average_seconds": 0.08199999999999999
-    }
-  },
-  {
-    "type": "player_turn_started",
-    "player": "simple-strands-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "simple-strands-1",
-    "reasoning": "cutting back down"
-  },
-  {
-    "type": "player_moved",
-    "player": "simple-strands-1",
-    "source": {
-      "x": 6,
-      "y": 6
-    },
-    "destination": {
-      "x": 5,
-      "y": 7
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "simple-strands-1",
-    "seconds": 1.95
-  },
-  {
-    "type": "player_stats",
-    "player": "simple-strands-1",
-    "stats": {
-      "turns": 5,
-      "total_seconds": 10.02,
-      "average_seconds": 2.004
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 6
-  },
-  {
-    "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering LEFT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 3,
-      "y": 2
-    },
-    "destination": {
-      "x": 2,
-      "y": 2
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.11
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 6,
-      "total_seconds": 0.52,
-      "average_seconds": 0.08666666666666667
-    }
-  },
-  {
-    "type": "player_turn_started",
-    "player": "simple-strands-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "simple-strands-1",
-    "reasoning": "the top-left corner is unclaimed"
-  },
-  {
-    "type": "player_moved",
-    "player": "simple-strands-1",
-    "source": {
-      "x": 5,
-      "y": 7
-    },
-    "destination": {
-      "x": 4,
-      "y": 6
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "simple-strands-1",
-    "seconds": 2.3
-  },
-  {
-    "type": "player_stats",
-    "player": "simple-strands-1",
-    "stats": {
-      "turns": 6,
-      "total_seconds": 12.32,
-      "average_seconds": 2.0533333333333332
-    }
-  },
-  {
-    "type": "round_started",
-    "round_number": 7
-  },
-  {
-    "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering UP_RIGHT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 2,
-      "y": 2
-    },
-    "destination": {
-      "x": 3,
-      "y": 1
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.06
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 7,
-      "total_seconds": 0.58,
-      "average_seconds": 0.08285714285714285
-    }
-  },
-  {
-    "type": "player_turn_started",
-    "player": "simple-strands-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "simple-strands-1",
-    "reasoning": "staying on the diagonal"
-  },
-  {
-    "type": "player_moved",
-    "player": "simple-strands-1",
-    "source": {
-      "x": 4,
-      "y": 6
-    },
-    "destination": {
-      "x": 3,
-      "y": 5
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "simple-strands-1",
-    "seconds": 1.68
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "simple-strands-1",
     "stats": {
       "turns": 7,
-      "total_seconds": 14.0,
-      "average_seconds": 2.0
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -544,72 +805,114 @@
   },
   {
     "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering RIGHT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 3,
-      "y": 1
-    },
-    "destination": {
-      "x": 4,
-      "y": 1
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.08
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 8,
-      "total_seconds": 0.66,
-      "average_seconds": 0.0825
-    }
-  },
-  {
-    "type": "player_turn_started",
     "player": "simple-strands-1"
   },
   {
     "type": "player_reasoned",
     "player": "simple-strands-1",
-    "reasoning": "edging west while I have room"
+    "reasoning": "Casting long-range fireball"
   },
   {
-    "type": "player_moved",
+    "type": "spell_cast",
     "player": "simple-strands-1",
-    "source": {
-      "x": 3,
-      "y": 5
+    "spell": "fireball",
+    "direction": "UP",
+    "origin": {
+      "x": 6,
+      "y": 7
     },
-    "destination": {
-      "x": 2,
-      "y": 5
-    }
+    "path": [
+      {
+        "x": 6,
+        "y": 6
+      },
+      {
+        "x": 6,
+        "y": 5
+      },
+      {
+        "x": 6,
+        "y": 4
+      }
+    ]
   },
   {
     "type": "player_turn_ended",
     "player": "simple-strands-1",
-    "seconds": 2.05
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "simple-strands-1",
     "stats": {
       "turns": 8,
-      "total_seconds": 16.05,
-      "average_seconds": 2.00625
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Maneuvering to rear quadrant"
+  },
+  {
+    "type": "player_moved",
+    "player": "dummy-1",
+    "source": {
+      "x": 5,
+      "y": 5
+    },
+    "destination": {
+      "x": 5,
+      "y": 4
+    }
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "DOWN_RIGHT",
+    "origin": {
+      "x": 5,
+      "y": 4
+    },
+    "path": [
+      {
+        "x": 6,
+        "y": 5
+      },
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 8,
+        "y": 7
+      }
+    ]
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 8,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -623,32 +926,59 @@
   {
     "type": "player_reasoned",
     "player": "dummy-1",
-    "reasoning": "no plan, wandering DOWN"
+    "reasoning": "Final assault vector"
   },
   {
     "type": "player_moved",
     "player": "dummy-1",
     "source": {
-      "x": 4,
-      "y": 1
+      "x": 5,
+      "y": 4
     },
     "destination": {
-      "x": 4,
-      "y": 2
+      "x": 6,
+      "y": 5
     }
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "RIGHT",
+    "origin": {
+      "x": 6,
+      "y": 5
+    },
+    "path": [
+      {
+        "x": 7,
+        "y": 5
+      },
+      {
+        "x": 8,
+        "y": 5
+      },
+      {
+        "x": 9,
+        "y": 5
+      }
+    ]
   },
   {
     "type": "player_turn_ended",
     "player": "dummy-1",
-    "seconds": 0.1
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "dummy-1",
     "stats": {
       "turns": 9,
-      "total_seconds": 0.76,
-      "average_seconds": 0.08444444444444445
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -658,32 +988,35 @@
   {
     "type": "player_reasoned",
     "player": "simple-strands-1",
-    "reasoning": "north again"
+    "reasoning": "Defensive perimeter held"
   },
   {
     "type": "player_moved",
     "player": "simple-strands-1",
     "source": {
-      "x": 2,
-      "y": 5
+      "x": 6,
+      "y": 7
     },
     "destination": {
-      "x": 2,
-      "y": 4
+      "x": 5,
+      "y": 6
     }
   },
   {
     "type": "player_turn_ended",
     "player": "simple-strands-1",
-    "seconds": 2.4
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "simple-strands-1",
     "stats": {
       "turns": 9,
-      "total_seconds": 18.45,
-      "average_seconds": 2.05
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
     }
   },
   {
@@ -692,72 +1025,114 @@
   },
   {
     "type": "player_turn_started",
-    "player": "dummy-1"
-  },
-  {
-    "type": "player_reasoned",
-    "player": "dummy-1",
-    "reasoning": "no plan, wandering RIGHT"
-  },
-  {
-    "type": "player_moved",
-    "player": "dummy-1",
-    "source": {
-      "x": 4,
-      "y": 2
-    },
-    "destination": {
-      "x": 5,
-      "y": 2
-    }
-  },
-  {
-    "type": "player_turn_ended",
-    "player": "dummy-1",
-    "seconds": 0.07
-  },
-  {
-    "type": "player_stats",
-    "player": "dummy-1",
-    "stats": {
-      "turns": 10,
-      "total_seconds": 0.83,
-      "average_seconds": 0.08299999999999999
-    }
-  },
-  {
-    "type": "player_turn_started",
     "player": "simple-strands-1"
   },
   {
     "type": "player_reasoned",
     "player": "simple-strands-1",
-    "reasoning": "cutting back down"
+    "reasoning": "Match concluding, holding position"
   },
   {
-    "type": "player_moved",
+    "type": "spell_cast",
     "player": "simple-strands-1",
-    "source": {
-      "x": 2,
-      "y": 4
+    "spell": "fireball",
+    "direction": "LEFT",
+    "origin": {
+      "x": 5,
+      "y": 6
     },
-    "destination": {
-      "x": 1,
-      "y": 5
-    }
+    "path": [
+      {
+        "x": 4,
+        "y": 6
+      },
+      {
+        "x": 3,
+        "y": 6
+      },
+      {
+        "x": 2,
+        "y": 6
+      }
+    ]
   },
   {
     "type": "player_turn_ended",
     "player": "simple-strands-1",
-    "seconds": 1.78
+    "seconds": 0.0
   },
   {
     "type": "player_stats",
     "player": "simple-strands-1",
     "stats": {
       "turns": 10,
-      "total_seconds": 20.23,
-      "average_seconds": 2.023
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
+    "type": "player_reasoned",
+    "player": "dummy-1",
+    "reasoning": "Securing sector victory"
+  },
+  {
+    "type": "spell_cast",
+    "player": "dummy-1",
+    "spell": "fireball",
+    "direction": "DOWN_RIGHT",
+    "origin": {
+      "x": 6,
+      "y": 5
+    },
+    "path": [
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 8,
+        "y": 7
+      },
+      {
+        "x": 9,
+        "y": 8
+      }
+    ]
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.0
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 10,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 0
+    }
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 10,
+      "total_seconds": 0.0,
+      "average_seconds": 0.0,
+      "eliminations": 0,
+      "deaths": 0,
+      "wins": 1
     }
   },
   {

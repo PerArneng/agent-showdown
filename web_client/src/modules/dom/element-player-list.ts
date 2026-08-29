@@ -26,11 +26,15 @@ export class ElementPlayerList implements PlayerList {
     const columns = [
       { key: "agent", label: "Agent" },
       { key: "status", label: "Status" },
+      { key: "health", label: "Health" },
       { key: "pos", label: "Position" },
       { key: "last-turn", label: "Last Turn" },
       { key: "avg-turn", label: "Avg Turn" },
       { key: "total-time", label: "Total Time" },
       { key: "turns", label: "Turns" },
+      { key: "eliminations", label: "Kills" },
+      { key: "deaths", label: "Deaths" },
+      { key: "wins", label: "Wins" },
       { key: "plan", label: "Latest Reasoning" },
     ];
 
@@ -59,8 +63,9 @@ export class ElementPlayerList implements PlayerList {
   }
 
   private row(player: PlayerState, isThinking: boolean, maxThink: number): HTMLElement {
+    const isDead = player.health <= 0;
     const tr = this.document.createElement("tr");
-    tr.className = `player-row${isThinking ? " is-thinking" : ""}`;
+    tr.className = `player-row${isThinking ? " is-thinking" : ""}${isDead ? " is-dead" : ""}`;
 
     // 1. Agent column (avatar + swatch + name)
     const tdAgent = this.document.createElement("td");
@@ -88,7 +93,10 @@ export class ElementPlayerList implements PlayerList {
     tdStatus.className = "cell-status";
 
     const statusBadge = this.document.createElement("span");
-    if (isThinking) {
+    if (isDead) {
+      statusBadge.className = "status-badge defeated";
+      statusBadge.textContent = "💀 Defeated";
+    } else if (isThinking) {
       statusBadge.className = "status-badge thinking";
       const dot = this.document.createElement("span");
       dot.className = "pulse-dot";
@@ -104,12 +112,33 @@ export class ElementPlayerList implements PlayerList {
     }
     tdStatus.append(statusBadge);
 
-    // 3. Position column
+    // 3. Health column
+    const tdHealth = this.document.createElement("td");
+    tdHealth.className = "cell-health";
+
+    const healthText = this.document.createElement("span");
+    healthText.className = "health-val";
+    healthText.textContent = `${player.health}/100`;
+
+    const healthBarTrack = this.document.createElement("div");
+    healthBarTrack.className = "health-bar-track";
+
+    const healthBarFill = this.document.createElement("div");
+    const hpPercent = Math.max(0, Math.min(100, player.health));
+    const hpClass =
+      hpPercent > 50 ? "hp-high" : hpPercent > 25 ? "hp-mid" : hpPercent > 0 ? "hp-low" : "hp-dead";
+    healthBarFill.className = `health-bar-fill ${hpClass}`;
+    healthBarFill.style.width = `${hpPercent}%`;
+
+    healthBarTrack.append(healthBarFill);
+    tdHealth.append(healthText, healthBarTrack);
+
+    // 4. Position column
     const tdPos = this.document.createElement("td");
     tdPos.className = "cell-pos";
     tdPos.textContent = `(${player.position.x}, ${player.position.y})`;
 
-    // 4. Last Turn column (numeric value + relative comparative bar)
+    // 5. Last Turn column
     const tdLastTurn = this.document.createElement("td");
     tdLastTurn.className = "cell-last-turn";
 
@@ -136,7 +165,7 @@ export class ElementPlayerList implements PlayerList {
       tdLastTurn.textContent = "-";
     }
 
-    // 5. Avg Turn column
+    // 6. Avg Turn column
     const tdAvg = this.document.createElement("td");
     tdAvg.className = "cell-avg-turn";
     if (player.turnsPlayed > 0) {
@@ -145,17 +174,32 @@ export class ElementPlayerList implements PlayerList {
       tdAvg.textContent = "-";
     }
 
-    // 6. Total Time column
+    // 7. Total Time column
     const tdTotal = this.document.createElement("td");
     tdTotal.className = "cell-total-time";
     tdTotal.textContent = player.turnsPlayed > 0 ? `${player.totalThinkSeconds.toFixed(1)}s` : "-";
 
-    // 7. Turns count column
+    // 8. Turns count column
     const tdTurns = this.document.createElement("td");
     tdTurns.className = "cell-turns";
     tdTurns.textContent = `${player.turnsPlayed}`;
 
-    // 8. Reasoning / plan column
+    // 9. Eliminations column
+    const tdElims = this.document.createElement("td");
+    tdElims.className = "cell-elims";
+    tdElims.innerHTML = `<span class="stat-badge elims"><span aria-hidden="true">⚔️</span> ${player.eliminations}</span>`;
+
+    // 10. Deaths column
+    const tdDeaths = this.document.createElement("td");
+    tdDeaths.className = "cell-deaths";
+    tdDeaths.innerHTML = `<span class="stat-badge deaths"><span aria-hidden="true">💀</span> ${player.deaths}</span>`;
+
+    // 11. Wins column
+    const tdWins = this.document.createElement("td");
+    tdWins.className = "cell-wins";
+    tdWins.innerHTML = `<span class="stat-badge wins"><span aria-hidden="true">🏆</span> ${player.wins}</span>`;
+
+    // 12. Reasoning / plan column
     const tdReasoning = this.document.createElement("td");
     tdReasoning.className = "cell-reasoning";
     if (player.reasoning) {
@@ -168,7 +212,20 @@ export class ElementPlayerList implements PlayerList {
       tdReasoning.textContent = "-";
     }
 
-    tr.append(tdAgent, tdStatus, tdPos, tdLastTurn, tdAvg, tdTotal, tdTurns, tdReasoning);
+    tr.append(
+      tdAgent,
+      tdStatus,
+      tdHealth,
+      tdPos,
+      tdLastTurn,
+      tdAvg,
+      tdTotal,
+      tdTurns,
+      tdElims,
+      tdDeaths,
+      tdWins,
+      tdReasoning,
+    );
     return tr;
   }
 }
