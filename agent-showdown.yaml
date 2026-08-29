@@ -13,10 +13,10 @@
 max_rounds: 100
 
 # Wandering stand-ins seated at startup, for a lively board with no model endpoints up.
-# dummies: 1
+dummies: 1
 
 agents:
-  - name: simple-strands-vllm
+  - name: qwen3.6-35b
     base_url: http://vllm.brain.home.arpa/v1
     model_id: qwen3.6-35b
     thinking: false
@@ -25,7 +25,7 @@ agents:
     # api_key: EMPTY    # servers that want no auth still need a value here
     # max_actions: 4    # what the prompt asks for; the rules cap a turn at 8
 
-  - name: simple-strands-lmstudio
+  - name: qwen3.8-27b
     base_url: http://localhost:1234/v1
     model_id: qwen/qwen3.8-27b
     thinking: false
