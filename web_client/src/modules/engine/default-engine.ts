@@ -55,14 +55,13 @@ export class DefaultEngine implements Engine {
   private async catchUp(): Promise<void> {
     const snapshot = await this.api.fetchSnapshot();
     this.show(this.reducer.catchUp(this.state, snapshot));
-    this.startButton.setEnabled(!snapshot.playing);
+    this.startButton.setEnabled(!snapshot.paused);
   }
 
   newGame(): void {
-    this.startButton.setEnabled(false);
-    // A new game starts from nothing, so a replay does not inherit the last one's players.
-    this.show(this.reducer.initial());
-    this.statusText.show("Dealing a new game.");
+    // Abandons the match in flight; server deals a fresh match immediately.
+    // The scoreboard and roster survive on the server; client state is updated by the incoming events.
+    this.statusText.show("Dealing a new match.");
     void this.api.newGame();
   }
 
@@ -139,15 +138,13 @@ export class DefaultEngine implements Engine {
     }
 
     this.show(this.reducer.reduce(this.state, event));
-    if (event.type === "game_ended") {
-      this.startButton.setEnabled(true);
-    }
   }
 
   private show(state: ClientState): void {
     this.state = state;
     this.renderer.render(state);
-    this.playerList.show(state.players, state.thinking);
+    this.playerList.show(state.players, state.thinking, state.registered, state.paused);
     this.statusText.show(state.status);
+    this.startButton.setEnabled(!state.paused);
   }
 }

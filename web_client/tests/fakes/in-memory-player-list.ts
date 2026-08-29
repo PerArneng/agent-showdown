@@ -5,10 +5,19 @@ import type { PlayerState } from "../../src/interfaces/game/index.js";
 export class InMemoryPlayerList implements PlayerList {
   shown: readonly PlayerState[] = [];
   thinking: string | null = null;
+  registered: readonly string[] = [];
+  paused = false;
 
-  show(players: readonly PlayerState[], thinking: string | null = null): void {
+  show(
+    players: readonly PlayerState[],
+    thinking: string | null = null,
+    registered: readonly string[] = [],
+    paused = false,
+  ): void {
     this.shown = players;
     this.thinking = thinking;
+    this.registered = registered;
+    this.paused = paused;
   }
 
   names(): readonly string[] {

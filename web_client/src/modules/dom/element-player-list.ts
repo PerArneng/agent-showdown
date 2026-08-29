@@ -9,9 +9,18 @@ export class ElementPlayerList implements PlayerList {
     private readonly document: Document,
   ) {}
 
-  show(players: readonly PlayerState[], thinking: string | null = null): void {
-    if (players.length === 0) {
-      this.element.replaceChildren(this.empty());
+  show(
+    players: readonly PlayerState[],
+    thinking: string | null = null,
+    registered: readonly string[] = [],
+    paused = false,
+  ): void {
+    const unseatedRegistered = registered.filter(
+      (name) => !players.some((player) => player.name === name),
+    );
+
+    if (players.length === 0 && unseatedRegistered.length === 0) {
+      this.element.replaceChildren(this.empty(paused));
       return;
     }
 
@@ -48,21 +57,33 @@ export class ElementPlayerList implements PlayerList {
 
     const tbody = this.document.createElement("tbody");
     for (const player of players) {
-      tbody.append(this.row(player, thinking === player.name, maxThink));
+      const isRegistered = registered.length === 0 || registered.includes(player.name);
+      tbody.append(this.row(player, thinking === player.name, maxThink, isRegistered));
+    }
+
+    for (const regName of unseatedRegistered) {
+      tbody.append(this.unseatedRow(regName));
     }
 
     table.append(thead, tbody);
     this.element.replaceChildren(table);
   }
 
-  private empty(): HTMLElement {
+  private empty(paused = false): HTMLElement {
     const emptyDiv = this.document.createElement("div");
     emptyDiv.className = "empty-roster";
-    emptyDiv.textContent = "No contestants yet. Start a game to see agent timing & statistics.";
+    emptyDiv.textContent = paused
+      ? "Arena paused — no robots registered. POST to /api/players to register contestants."
+      : "No contestants seated yet. Waiting for match to start.";
     return emptyDiv;
   }
 
-  private row(player: PlayerState, isThinking: boolean, maxThink: number): HTMLElement {
+  private row(
+    player: PlayerState,
+    isThinking: boolean,
+    maxThink: number,
+    isRegistered = true,
+  ): HTMLElement {
     const isDead = player.health <= 0;
     const tr = this.document.createElement("tr");
     tr.className = `player-row${isThinking ? " is-thinking" : ""}${isDead ? " is-dead" : ""}`;
@@ -103,12 +124,15 @@ export class ElementPlayerList implements PlayerList {
       const text = this.document.createElement("span");
       text.textContent = "Thinking";
       statusBadge.append(dot, text);
+    } else if (!isRegistered) {
+      statusBadge.className = "status-badge leaving";
+      statusBadge.textContent = "🚪 Leaving";
     } else if (player.turnsPlayed > 0) {
       statusBadge.className = "status-badge idle";
-      statusBadge.textContent = "Idle";
+      statusBadge.textContent = "Seated";
     } else {
       statusBadge.className = "status-badge ready";
-      statusBadge.textContent = "Ready";
+      statusBadge.textContent = "Seated";
     }
     tdStatus.append(statusBadge);
 
@@ -211,6 +235,101 @@ export class ElementPlayerList implements PlayerList {
     } else {
       tdReasoning.textContent = "-";
     }
+
+    tr.append(
+      tdAgent,
+      tdStatus,
+      tdHealth,
+      tdPos,
+      tdLastTurn,
+      tdAvg,
+      tdTotal,
+      tdTurns,
+      tdElims,
+      tdDeaths,
+      tdWins,
+      tdReasoning,
+    );
+    return tr;
+  }
+
+  private unseatedRow(name: string): HTMLElement {
+    const tr = this.document.createElement("tr");
+    tr.className = "player-row is-waiting";
+
+    // 1. Agent column
+    const tdAgent = this.document.createElement("td");
+    tdAgent.className = "cell-agent";
+
+    const swatch = this.document.createElement("span");
+    swatch.className = "swatch swatch-waiting";
+
+    const nameSpan = this.document.createElement("span");
+    nameSpan.className = "player-name";
+    nameSpan.textContent = name;
+
+    tdAgent.append(swatch, nameSpan);
+
+    // 2. Status column
+    const tdStatus = this.document.createElement("td");
+    tdStatus.className = "cell-status";
+    const badge = this.document.createElement("span");
+    badge.className = "status-badge waiting";
+    badge.textContent = "⏳ Next Match";
+    tdStatus.append(badge);
+
+    // 3. Health
+    const tdHealth = this.document.createElement("td");
+    tdHealth.className = "cell-health";
+    tdHealth.textContent = "-";
+
+    // 4. Position
+    const tdPos = this.document.createElement("td");
+    tdPos.className = "cell-pos";
+    tdPos.textContent = "-";
+
+    // 5. Last Turn
+    const tdLastTurn = this.document.createElement("td");
+    tdLastTurn.className = "cell-last-turn";
+    tdLastTurn.textContent = "-";
+
+    // 6. Avg Turn
+    const tdAvg = this.document.createElement("td");
+    tdAvg.className = "cell-avg-turn";
+    tdAvg.textContent = "-";
+
+    // 7. Total Time
+    const tdTotal = this.document.createElement("td");
+    tdTotal.className = "cell-total-time";
+    tdTotal.textContent = "-";
+
+    // 8. Turns
+    const tdTurns = this.document.createElement("td");
+    tdTurns.className = "cell-turns";
+    tdTurns.textContent = "-";
+
+    // 9. Elims
+    const tdElims = this.document.createElement("td");
+    tdElims.className = "cell-elims";
+    tdElims.textContent = "-";
+
+    // 10. Deaths
+    const tdDeaths = this.document.createElement("td");
+    tdDeaths.className = "cell-deaths";
+    tdDeaths.textContent = "-";
+
+    // 11. Wins
+    const tdWins = this.document.createElement("td");
+    tdWins.className = "cell-wins";
+    tdWins.textContent = "-";
+
+    // 12. Reasoning
+    const tdReasoning = this.document.createElement("td");
+    tdReasoning.className = "cell-reasoning";
+    const reasoningSpan = this.document.createElement("span");
+    reasoningSpan.className = "reasoning-text text-muted";
+    reasoningSpan.textContent = "Registered in arena — waiting for next match";
+    tdReasoning.append(reasoningSpan);
 
     tr.append(
       tdAgent,

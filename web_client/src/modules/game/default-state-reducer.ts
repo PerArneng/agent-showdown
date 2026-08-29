@@ -56,12 +56,31 @@ export class DefaultStateReducer implements StateReducer {
             },
       state,
     ).players;
-    const status =
-      state.playing || !snapshot.playing ? state.status : `Round ${snapshot.round_number}.`;
+
+    const paused = state.playing ? false : state.paused || snapshot.paused;
+    const playing = state.paused ? false : state.playing || snapshot.playing;
+
+    let status = state.status;
+    if (state.status === "Waiting.") {
+      if (snapshot.paused) {
+        status = "Waiting for a robot to join.";
+      } else if (snapshot.playing && snapshot.round_number > 0) {
+        status = `Round ${snapshot.round_number}.`;
+      }
+    }
+
     // Gaps only, like everything else here: anything the stream already told us stays.
-    const registered =
-      state.registered.length > 0 ? state.registered : [...snapshot.registered];
-    return { ...state, board, players, status, registered, thinking: state.thinking };
+    const registered = state.registered.length > 0 ? state.registered : [...snapshot.registered];
+    return {
+      ...state,
+      board,
+      players,
+      status,
+      playing,
+      paused,
+      registered,
+      thinking: state.thinking,
+    };
   }
 
   reduce(state: ClientState, event: GameEvent): ClientState {

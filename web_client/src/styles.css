@@ -334,7 +334,6 @@ canvas#board {
   width: auto;
 }
 
-
 .player-row {
   height: 48px;
   transition:
@@ -454,6 +453,31 @@ canvas#board {
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-badge.waiting {
+  background: rgba(76, 141, 255, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(76, 141, 255, 0.3);
+}
+
+.status-badge.leaving {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.player-row.is-waiting {
+  opacity: 0.75;
+}
+
+.swatch.swatch-waiting {
+  background: #64748b;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+}
+
+.text-muted {
+  color: var(--muted);
 }
 
 /* Health Column */

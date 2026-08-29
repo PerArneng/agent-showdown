@@ -63,10 +63,10 @@ describe("DefaultStateReducer", () => {
   });
 
   it("drops a robot that left the arena", () => {
-    const joined = after(
-      after(empty, { type: "player_registered", player: "a" }),
-      { type: "player_registered", player: "b" },
-    );
+    const joined = after(after(empty, { type: "player_registered", player: "a" }), {
+      type: "player_registered",
+      player: "b",
+    });
 
     const state = after(joined, { type: "player_unregistered", player: "a" });
 
@@ -509,6 +509,76 @@ describe("DefaultStateReducer", () => {
       };
 
       expect(reducer.catchUp(empty, nothing)).toEqual(empty);
+    });
+
+    it("recovers paused arena state and status from snapshot for late-connecting client", () => {
+      const pausedSnapshot: GameSnapshot = {
+        board: null,
+        max_rounds: 0,
+        round_number: 0,
+        playing: false,
+        paused: true,
+        registered: [],
+        players: [],
+      };
+
+      const state = reducer.catchUp(empty, pausedSnapshot);
+
+      expect(state.paused).toBe(true);
+      expect(state.playing).toBe(false);
+      expect(state.status).toContain("join");
+    });
+
+    it("hydrates registered arena roster from snapshot", () => {
+      const snapshotWithRegistered: GameSnapshot = {
+        board: null,
+        max_rounds: 0,
+        round_number: 0,
+        playing: false,
+        paused: false,
+        registered: ["agent-1", "agent-2"],
+        players: [],
+      };
+
+      const state = reducer.catchUp(empty, snapshotWithRegistered);
+
+      expect(state.registered).toEqual(["agent-1", "agent-2"]);
+    });
+
+    it("maintains continuous matches where game_ended is followed by next match joins", () => {
+      const matchOne = after(
+        empty,
+        { type: "player_registered", player: "alice" },
+        { type: "player_joined", player: "alice", position: { x: 0, y: 0 } },
+        { type: "game_started", board: { width: 10, height: 10 }, max_rounds: 10 },
+        {
+          type: "player_stats",
+          player: "alice",
+          stats: {
+            turns: 5,
+            total_seconds: 10,
+            average_seconds: 2,
+            eliminations: 1,
+            deaths: 0,
+            wins: 1,
+          },
+        },
+        { type: "game_ended", rounds_played: 5 },
+      );
+
+      expect(matchOne.playing).toBe(false);
+      expect(matchOne.players[0]?.wins).toBe(1);
+      expect(matchOne.registered).toEqual(["alice"]);
+
+      const matchTwo = after(
+        matchOne,
+        { type: "player_joined", player: "alice", position: { x: 0, y: 0 } },
+        { type: "game_started", board: { width: 10, height: 10 }, max_rounds: 10 },
+      );
+
+      expect(matchTwo.playing).toBe(true);
+      expect(matchTwo.players[0]?.wins).toBe(1);
+      expect(matchTwo.players[0]?.health).toBe(100);
     });
   });
 });

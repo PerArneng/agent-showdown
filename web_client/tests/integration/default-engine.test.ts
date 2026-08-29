@@ -91,22 +91,33 @@ describe("DefaultEngine", () => {
     );
   });
 
-  it("disables the button on start and re-enables it when the game ends", async () => {
+  it("requests a new match via api when button is clicked", async () => {
     const stream = new ScriptedEventStream();
     const fixture = new Fixture(stream);
     fixture.engine.connect();
     await fixture.clock.settled();
 
     fixture.startButton.click();
-    expect(fixture.startButton.enabled).toBe(false);
     expect(fixture.api.started).toBe(1);
+    expect(fixture.statusText.last()).toBe("Dealing a new match.");
+  });
 
-    stream.push({ type: "game_ended", rounds_played: 10 });
+  it("disables the button when the arena pauses and re-enables when resumed", async () => {
+    const stream = new ScriptedEventStream();
+    const fixture = new Fixture(stream);
+    fixture.engine.connect();
+    await fixture.clock.settled();
+
+    stream.push({ type: "arena_paused" });
+    await fixture.clock.settled();
+    expect(fixture.startButton.enabled).toBe(false);
+
+    stream.push({ type: "arena_resumed" });
     await fixture.clock.settled();
     expect(fixture.startButton.enabled).toBe(true);
   });
 
-  it("clears the last game's players when a new one starts", async () => {
+  it("requests a new match without wiping known players prematurely", async () => {
     const fixture = new Fixture(new ScriptedEventStream(recorded));
     fixture.engine.connect();
     await fixture.clock.settled();
@@ -114,8 +125,9 @@ describe("DefaultEngine", () => {
 
     fixture.startButton.click();
 
-    expect(fixture.playerList.names()).toEqual([]);
-    expect(fixture.statusText.last()).toBe("Dealing a new game.");
+    expect(fixture.api.started).toBe(1);
+    expect(fixture.playerList.names()).toHaveLength(2);
+    expect(fixture.statusText.last()).toBe("Dealing a new match.");
   });
 
   it("shows the empty state before anything has happened", async () => {
@@ -246,24 +258,33 @@ describe("DefaultEngine", () => {
       expect(fixture.playerList.shown.map((player) => player.name)).toEqual(["one"]);
     });
 
-    it("leaves the start button disabled while that game is still running", async () => {
+    it("leaves the start button enabled while a match is running to allow restarting", async () => {
       const fixture = new Fixture(new ScriptedEventStream([]), midGame);
 
       fixture.engine.connect();
       await Promise.resolve();
       await Promise.resolve();
 
-      expect(fixture.startButton.enabled).toBe(false);
+      expect(fixture.startButton.enabled).toBe(true);
     });
 
-    it("keeps the button usable when nothing is playing", async () => {
-      const fixture = new Fixture(new ScriptedEventStream([]));
+    it("disables the button when arena is paused with no contestants", async () => {
+      const pausedArena: GameSnapshot = {
+        board: null,
+        max_rounds: 0,
+        round_number: 0,
+        playing: false,
+        paused: true,
+        registered: [],
+        players: [],
+      };
+      const fixture = new Fixture(new ScriptedEventStream([]), pausedArena);
 
       fixture.engine.connect();
       await Promise.resolve();
       await Promise.resolve();
 
-      expect(fixture.startButton.enabled).toBe(true);
+      expect(fixture.startButton.enabled).toBe(false);
     });
   });
 });
