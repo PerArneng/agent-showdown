@@ -48,6 +48,7 @@ def test_take_turn_sends_the_view_as_json_under_the_context_id() -> None:
         "position": {"x": 1, "y": 1},
         "round_number": 2,
         "health": 100,
+        "max_health": 100,
         "opponents": [],
         "spells": [],
     }

@@ -145,17 +145,25 @@ class DefaultGame:
             position=self._positions[player],
             round_number=round_number,
             health=self._health[player],
+            max_health=_MAX_HEALTH,
             # The eliminated are shown too, at zero health: their bodies still block a fireball.
             opponents=tuple(
-                Opponent(
-                    name=other.get_name(),
-                    position=self._positions[other],
-                    health=self._health[other],
-                )
+                self._opponent(other, self._positions[player])
                 for other in self._players
                 if other is not player
             ),
             spells=tuple(spell.describe() for spell in self._spells[player]),
+        )
+
+    def _opponent(self, other: Player, origin: Position) -> Opponent:
+        """Describe one robot, with the geometry between it and whoever is looking, worked out."""
+        target = self._positions[other]
+        return Opponent(
+            name=other.get_name(),
+            position=target,
+            health=self._health[other],
+            direction=_direction_between(origin, target),
+            distance=_steps_between(origin, target),
         )
 
     def _report_stats(self, player: Player) -> None:
@@ -263,3 +271,25 @@ class DefaultGame:
     def _emit(self, notify: Callable[[GameListener], None]) -> None:
         for listener in self._listeners:
             notify(listener)
+
+
+def _direction_between(origin: Position, target: Position) -> Direction | None:
+    """The direction a bolt must be fired to reach `target`, or None if it is not lined up.
+
+    Lined up means the offset is a whole number of steps along one of the eight directions: the
+    same row, the same column, or an exact diagonal. Anything else cannot be reached by anything
+    that travels in a straight line, whatever its range.
+    """
+    dx, dy = target.x - origin.x, target.y - origin.y
+    if dx == 0 and dy == 0:
+        return None
+    steps = _steps_between(origin, target)
+    for direction, (step_x, step_y) in DELTAS.items():
+        if (step_x * steps, step_y * steps) == (dx, dy):
+            return direction
+    return None
+
+
+def _steps_between(origin: Position, target: Position) -> int:
+    """How many moves apart two squares are. A diagonal is one step, like a move."""
+    return max(abs(target.x - origin.x), abs(target.y - origin.y))

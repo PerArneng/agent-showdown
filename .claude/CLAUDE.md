@@ -98,6 +98,12 @@ player never sees the board — only its own `GameView`, handed to it once per t
   `Action` is flat — `kind`, `direction`, `spell` — rather than a union of a move and a cast model,
   because `PlayerTurn` is handed to a model as a structured-output schema and a flat object
   survives guided decoding where an `anyOf` often does not.
+- **The view does the geometry, because the model cannot.** `Opponent` carries `direction` — the
+  way a bolt would have to be fired to reach it, or `None` when it is on no ray — and `distance`
+  in steps, and `GameView` carries `max_health` so a robot can tell whether it is hurt. Measured
+  over a real match before this existed, **78% of casts were fired when no direction could have
+  hit anything**: a bolt travels only along the eight directions, and these models are poor at
+  working out whether a target is lined up. The game already knows, so it says.
 - **Health is a rule of the game, spells are not.** Every robot starts on `_MAX_HEALTH` (100), and
   a `Spell` is pure geometry: given an origin, a direction, a board and the occupied squares it
   returns a `SpellEffect` — the path it travelled and the square it stopped on. It never sees a
@@ -291,7 +297,9 @@ Python side finds and serves what that project builds.
   model fields.
 - **`DummyPlayer` sleeps 500ms per turn** so a human can watch it move. Tests pass a
   `FrozenClock` and `think_time=0.0`, so the suite stays instant — never let a real clock into
-  a test that plays a game.
+  a test that plays a game. It is no longer a pure wanderer: it takes a lined-up shot, walks at
+  the nearest robot when it has none, and only wanders when the arena is empty. It reasons about
+  nothing and calls no model — it just reads the geometry the view already carries.
 
 ## Commands
 

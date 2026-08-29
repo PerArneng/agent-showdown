@@ -15,5 +15,7 @@ class GameView(BaseModel):
     position: Position
     round_number: int
     health: int
+    # What full health is, so a contestant can tell whether it is hurt.
+    max_health: int = 100
     opponents: tuple[Opponent, ...] = ()
     spells: tuple[SpellInfo, ...] = ()

@@ -38,7 +38,7 @@ the game judges that plan whole before applying any of it.
 **Action** — a single entry in a plan: a step in a direction, or a spell aimed down one. Up to
 eight per turn, applied in order.
 
-**Contestant** — a `Player`. It might be a local wanderer, an in-process LLM agent, or a remote
+**Contestant** — a `Player`. It might be a local stand-in, an in-process LLM agent, or a remote
 agent over HTTP; the game cannot tell and does not care.
 
 **Spell** — something a robot carries and can cast. Pure geometry: it computes where a bolt
@@ -111,6 +111,18 @@ contestant kill the match.
 A contestant sees exactly what `GameView` carries and nothing else: not the board object, not the
 other robots' plans, not the scoreboard.
 
+#### The view does the geometry
+
+`Opponent` carries `direction` and `distance` — worked out by the game rather than left to the
+contestant. This is not a convenience. A bolt travels only along the eight directions, so it
+reaches a robot only when that robot is on the same row, column or exact diagonal, and measured
+over a real match **78% of casts were fired when no direction could have hit anything**. The
+models are poor at that arithmetic; the game already knows the answer. Supplying it moved casts
+that were aimed down a line with a target on them from 11% to 96%.
+
+It belongs to the game because direction deltas are a rule of the board, and putting it in the
+view means every kind of contestant benefits — a remote A2A agent gets it for free.
+
 ### `Spell` — geometry, and nothing else
 
 ```python
@@ -173,8 +185,8 @@ All frozen (`ConfigDict(frozen=True)`): data, no behaviour.
 | `ActionKind` | `MOVE`, `CAST` | what an entry in a plan does |
 | `Action` | `kind`, `direction`, `spell` | one entry of a plan. **Flat, not a `Move \| Cast` union** — `PlayerTurn` doubles as an LLM structured-output schema, and a flat object survives guided decoding where an `anyOf` often does not. `spell` is ignored when `kind` is `MOVE` |
 | `PlayerTurn` | `reasoning`, `actions` | what a contestant answers with. The reasoning is reported *before* the plan is judged, so a refused plan still explains itself |
-| `GameView` | `board`, `position`, `round_number`, `health`, `opponents`, `spells` | the entire world one contestant can see |
-| `Opponent` | `name`, `position`, `health` | another robot as a contestant sees it. Health `0` means eliminated — and a corpse still blocks a fireball, which is why the dead are listed |
+| `GameView` | `board`, `position`, `round_number`, `health`, `max_health`, `opponents`, `spells` | the entire world one contestant can see. `max_health` is there so a robot can tell whether `40` means healthy or nearly dead |
+| `Opponent` | `name`, `position`, `health`, `direction`, `distance` | another robot as a contestant sees it. Health `0` means eliminated — and a corpse still blocks a fireball, which is why the dead are listed. `direction` is the way a bolt would have to be fired to reach it, or `None` when it is on no ray; `distance` is steps, counting a diagonal as one. See [the geometry note](#the-view-does-the-geometry) |
 | `SpellInfo` | `name`, `description`, `damage`, `range` | what a robot is told it carries. `name` is what an `Action` must name |
 | `SpellEffect` | `path`, `impact`, `damage` | what a cast did, as geometry |
 | `PlayerStats` | `turns`, `total_seconds`, `average_seconds`, `eliminations`, `deaths`, `wins` | running totals across the whole arena run |

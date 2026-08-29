@@ -7,6 +7,7 @@ from agent_showdown.interfaces.game import (
     Board,
     Direction,
     GameView,
+    Opponent,
     PlayerStats,
     PlayerTurn,
     Position,
@@ -803,3 +804,79 @@ def test_the_first_round_still_runs_in_registration_order() -> None:
     game.start(max_rounds=1)
 
     assert _turn_order(listener) == ["a", "b"]
+
+
+def _opponents(player: ScriptedPlayer | PlanningPlayer) -> dict[str, Opponent]:
+    return {opponent.name: opponent for opponent in player.views[0].opponents}
+
+
+def test_a_robot_is_told_how_far_away_each_other_robot_is() -> None:
+    game = _game(board=Board(width=10, height=10))
+    watcher = ScriptedPlayer("watcher")
+    game.register_player(watcher, Position(x=4, y=4))
+    game.register_player(IdlePlayer("straight"), Position(x=4, y=7))
+    game.register_player(IdlePlayer("diagonal"), Position(x=6, y=6))
+    game.register_player(IdlePlayer("askew"), Position(x=7, y=6))
+
+    game.start(max_rounds=1)
+
+    seen = _opponents(watcher)
+    # A diagonal counts as one step, exactly as a move does.
+    assert seen["straight"].distance == 3
+    assert seen["diagonal"].distance == 2
+    assert seen["askew"].distance == 3
+
+
+def test_a_robot_is_told_which_way_a_bolt_would_have_to_be_fired() -> None:
+    game = _game(board=Board(width=10, height=10))
+    watcher = ScriptedPlayer("watcher")
+    game.register_player(watcher, Position(x=4, y=4))
+    game.register_player(IdlePlayer("below"), Position(x=4, y=7))
+    game.register_player(IdlePlayer("diagonal"), Position(x=6, y=6))
+
+    game.start(max_rounds=1)
+
+    seen = _opponents(watcher)
+    assert seen["below"].direction is Direction.DOWN
+    assert seen["diagonal"].direction is Direction.DOWN_RIGHT
+
+
+def test_a_robot_on_no_ray_is_reported_as_unreachable() -> None:
+    game = _game(board=Board(width=10, height=10))
+    watcher = ScriptedPlayer("watcher")
+    game.register_player(watcher, Position(x=4, y=4))
+    game.register_player(IdlePlayer("askew"), Position(x=7, y=6))
+
+    game.start(max_rounds=1)
+
+    # (3,2) away is neither straight nor an exact diagonal, so nothing can reach it.
+    assert _opponents(watcher)["askew"].direction is None
+
+
+def test_the_geometry_matches_where_a_fireball_actually_goes() -> None:
+    """The view must not promise a shot the rules would not deliver."""
+    board = Board(width=10, height=10)
+    game, listener = _game(board=board), RecordingGameListener()
+    game.add_listener(listener)
+    watcher = PlanningPlayer("watcher", _cast(Direction.DOWN_RIGHT))
+    game.register_player(watcher, Position(x=4, y=4))
+    game.register_player(IdlePlayer("diagonal"), Position(x=6, y=6))
+    game.register_player(IdlePlayer("bystander"), Position(x=0, y=9))
+
+    game.start(max_rounds=1)
+
+    promised = _opponents(watcher)["diagonal"]
+    assert promised.direction is Direction.DOWN_RIGHT and promised.distance == 2
+    assert _health(listener, "diagonal") == [90]
+
+
+def test_a_robot_is_told_what_full_health_is() -> None:
+    game = _game()
+    watcher = ScriptedPlayer("watcher")
+    game.register_player(watcher, Position(x=0, y=0))
+    game.register_player(IdlePlayer("other"), Position(x=2, y=2))
+
+    game.start(max_rounds=1)
+
+    # Without a maximum, a robot cannot tell whether 40 health is healthy or nearly dead.
+    assert watcher.views[0].max_health == 100

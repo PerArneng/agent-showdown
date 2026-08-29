@@ -14,7 +14,10 @@ _SYSTEM_PROMPT = (
     "which spells you carry. The aim is to be the last robot standing, so close in on a robot you "
     "can burn down and keep out of the line of fire yourself. Answer with the actions you want to "
     "take and a one-sentence reason. Never plan a move that would leave the arena, and only cast a "
-    "spell you actually carry."
+    "spell you actually carry. A bolt travels in a straight line along one of the eight "
+    "directions, so it only reaches a robot that is on your row, your column or an exact diagonal "
+    "from you: you are told exactly which shots would land, so take one of those and do not cast "
+    "into empty air when none is offered."
 )
 
 _NO_THINKING: dict[str, Any] = {

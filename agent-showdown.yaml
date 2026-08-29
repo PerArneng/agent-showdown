@@ -25,9 +25,18 @@ agents:
     # api_key: EMPTY    # servers that want no auth still need a value here
     # max_actions: 4    # what the prompt asks for; the rules cap a turn at 8
 
-  - name: qwen3.8-27b
+  - name: gemma-4-e4b
     base_url: http://localhost:1234/v1
-    model_id: qwen/qwen3.8-27b
+    model_id: google/gemma-4-e4b
     thinking: false
     max_tokens: 16384
     timeout: 300.0
+
+  # The LM Studio seat before gemma. A reasoning model like gemma, and like it,
+  # honours reasoning_effort: "none" — but around three times slower per turn.
+  # - name: qwen3.8-27b
+  #   base_url: http://localhost:1234/v1
+  #   model_id: qwen/qwen3.8-27b
+  #   thinking: false
+  #   max_tokens: 16384
+  #   timeout: 300.0
