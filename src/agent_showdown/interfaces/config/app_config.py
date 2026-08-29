@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
 from agent_showdown.interfaces.config.agent_config import AgentConfig
+from agent_showdown.interfaces.config.terrain_config import TerrainConfig
 
 # The roster a run plays with when no config file is found.
 _DEFAULT_AGENTS = (
@@ -35,3 +36,5 @@ class AppConfig(BaseModel):
     # Wandering stand-ins seated at startup. Zero by default, so an arena with no reachable agents
     # honestly pauses instead of playing a solo dummy. Set to 1 for a lively board with no models.
     dummies: int = 0
+    # How much scenery a generated board carries. A fresh layout is dealt every match.
+    terrain: TerrainConfig = TerrainConfig()

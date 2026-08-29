@@ -98,6 +98,34 @@ npm run format   # prettier
 
 Dev dependencies only: `vite`, `typescript`, `vitest`, `prettier`.
 
+- **Terrain arrives inside `Board`**, so `reduce` needed no new case and `catchUp` no new field —
+  but `ThreeBoardRenderer`'s rebuild guard compared width and height only, and every match is the
+  same size, so the layout is part of that comparison now. `board.obstacles` is optional because
+  `fixtures/demo-game.json` was recorded before terrain existed; read it as `?? []`.
+- **The obstacles have a `THREE.Group` of their own, and it is not an optimisation.** The arena is
+  re-dealt every round, so `placeObstacles` runs far more often than the diorama beneath it.
+  Ground, grid lines and the eight border trees rebuild only when the board's *size* changes;
+  obstacles rebuild whenever the layout signature does. Rebuilding both together would tear down
+  and re-raise the whole diorama at every round boundary, which flickers for nothing. `borderTrees`
+  and `obstacles` are separate lists for the same reason; the occlusion fade walks both.
+- **`createObstacleMesh` in `modules/game/obstacle-meshes.ts` picks the model for a square.**
+  Every kind is a `.glb` now. Which variant, and how it is turned, comes from a deterministic
+  hash of the square it stands on, because `Math.random` is an edge concern and this is not an
+  edge module.
+- **Measure a `.glb` through its node hierarchy, never from the accessor `min`/`max` alone.**
+  These models are dozens of separately-placed stones, so the union of the mesh-local boxes is
+  meaningless: it made every wall look a third of its true size and made the junction pieces look
+  like identical symmetric crosses. Walking the nodes gives the truth — the wall models are
+  authored *to the tile*, every arm reaching exactly 0.5 from the centre, so `WALL_SCALE` is 1.0
+  and a piece meets its neighbour flush.
+- **The wall models' native arms are not what you would guess**, so they are written down here:
+  `stone-wall-middle` runs **east-west**, `stone-wall-2way` is an L with arms **west and south**,
+  `stone-wall-3way` is a T with arms **east, west and south** (open to the north), `stone-wall-4way`
+  is symmetric, and `stone-wall-end` reaches no edge at all — it is a lump for a lone square, not
+  a cap. `tests/unit/obstacle-meshes.test.ts` asserts the model *and* the rotation for every
+  neighbour pattern; asserting rotation alone is what let a wrong model choice go unnoticed, which
+  is also why `ModelLoader.instantiate` stamps `userData.modelKey`.
+
 ## Gotchas
 
 - **The build must stay single-file.** `vite-plugin-singlefile` inlines the JavaScript and CSS into

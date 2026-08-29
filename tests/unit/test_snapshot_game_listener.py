@@ -3,9 +3,11 @@ from agent_showdown.interfaces.game import (
     Direction,
     GameListener,
     GameView,
+    Obstacle,
     PlayerStats,
     PlayerTurn,
     Position,
+    TerrainKind,
 )
 from agent_showdown.modules.game import SnapshotGameListener
 
@@ -249,3 +251,21 @@ def test_a_new_game_puts_every_robot_back_on_full_health() -> None:
     listener.player_joined(player, Position(x=1, y=2))
 
     assert listener.snapshot().players[0].health == 100
+
+
+def test_a_re_deal_replaces_the_board_a_late_client_would_be_handed() -> None:
+    """A browser joining in round 40 must be told the ground out there now, not round one's."""
+    listener = SnapshotGameListener()
+    listener.game_started(_BOARD, max_rounds=10)
+    listener.player_joined(_NamedPlayer("alice"), Position(x=1, y=1))
+    redealt = Board(
+        width=4,
+        height=3,
+        obstacles=(Obstacle(position=Position(x=3, y=2), kind=TerrainKind.BOULDER),),
+    )
+
+    listener.board_changed(redealt)
+
+    assert listener.snapshot().board == redealt
+    # Only the board. The line-up is mid-match and must survive the ground changing under it.
+    assert [player.name for player in listener.snapshot().players] == ["alice"]

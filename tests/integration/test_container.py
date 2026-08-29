@@ -80,5 +80,7 @@ def test_providers_are_singletons() -> None:
 
 
 def test_the_game_factory_hands_out_a_fresh_game_each_time() -> None:
-    factory = Container().game_factory()
+    # The factory reads the terrain config to decide whether to re-deal, so the container needs
+    # one — like `agent_roster`, it cannot resolve from a bare `Container()`.
+    factory = _container(InMemoryConsole()).game_factory()
     assert factory.create(Board(width=2, height=2)) is not factory.create(Board(width=2, height=2))

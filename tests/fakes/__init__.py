@@ -1,3 +1,4 @@
+from tests.fakes.fixed_board_factory import FixedBoardFactory
 from tests.fakes.fixed_randomizer import FixedRandomizer
 from tests.fakes.frozen_clock import FrozenClock
 from tests.fakes.in_memory_console import InMemoryConsole
@@ -15,6 +16,7 @@ from tests.fakes.scripted_event_subscription import ScriptedEventSubscription
 from tests.fakes.scripted_turn_planner import ScriptedTurnPlanner
 
 __all__ = [
+    "FixedBoardFactory",
     "FixedRandomizer",
     "FrozenClock",
     "InMemoryConsole",

@@ -28,6 +28,9 @@ class LogGameListener:
     def player_joined(self, player: Player, position: Position) -> None:
         self._logger.info(f"player {player.get_name()} joined at {_cell(position)}")
 
+    def board_changed(self, board: Board) -> None:
+        self._logger.info(f"the arena was re-dealt with {len(board.obstacles)} obstacles")
+
     def round_started(self, round_number: int) -> None:
         self._logger.info(f"round {round_number} started")
 

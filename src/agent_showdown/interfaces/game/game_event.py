@@ -4,6 +4,7 @@ from pydantic import Field
 
 from agent_showdown.interfaces.game.arena_paused_event import ArenaPausedEvent
 from agent_showdown.interfaces.game.arena_resumed_event import ArenaResumedEvent
+from agent_showdown.interfaces.game.board_changed_event import BoardChangedEvent
 from agent_showdown.interfaces.game.game_ended_event import GameEndedEvent
 from agent_showdown.interfaces.game.game_started_event import GameStartedEvent
 from agent_showdown.interfaces.game.move_blocked_event import MoveBlockedEvent
@@ -31,6 +32,7 @@ GameEvent = Annotated[
     | PlayerUnregisteredEvent
     | GameStartedEvent
     | PlayerJoinedEvent
+    | BoardChangedEvent
     | RoundStartedEvent
     | PlayerTurnStartedEvent
     | PlayerTurnEndedEvent

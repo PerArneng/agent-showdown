@@ -3,6 +3,7 @@ export type { ClientState } from "./client-state.js";
 export type {
   ArenaPausedEvent,
   ArenaResumedEvent,
+  BoardChangedEvent,
   GameEndedEvent,
   GameEvent,
   GameStartedEvent,
@@ -24,6 +25,7 @@ export type {
   TurnFailedEvent,
 } from "./game-event.js";
 export type { GameSnapshot, PlayerSnapshot } from "./game-snapshot.js";
+export type { Obstacle, TerrainKind } from "./obstacle.js";
 export type { PlayerState } from "./player-state.js";
 export type { Position } from "./position.js";
 export type { Renderer } from "./renderer.js";

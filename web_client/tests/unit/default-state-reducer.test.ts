@@ -85,6 +85,57 @@ describe("DefaultStateReducer", () => {
     expect(state.thinking).toBeNull();
   });
 
+  it("carries the terrain through with the board it belongs to", () => {
+    const state = after(empty, {
+      type: "game_started",
+      board: {
+        width: 10,
+        height: 10,
+        obstacles: [
+          { position: { x: 3, y: 4 }, kind: "stone_wall" },
+          { position: { x: 7, y: 2 }, kind: "boulder" },
+        ],
+      },
+      max_rounds: 10,
+    });
+
+    expect(state.board?.obstacles).toHaveLength(2);
+    expect(state.board?.obstacles?.[0]?.kind).toBe("stone_wall");
+  });
+
+  it("takes the re-dealt arena from board_changed and leaves the match alone", () => {
+    const started = after(
+      empty,
+      { type: "game_started", board: { width: 10, height: 10 }, max_rounds: 10 },
+      { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
+      { type: "round_started", round_number: 4 },
+    );
+
+    const state = after(started, {
+      type: "board_changed",
+      board: {
+        width: 10,
+        height: 10,
+        obstacles: [{ position: { x: 5, y: 5 }, kind: "stone_well" }],
+      },
+    });
+
+    expect(state.board?.obstacles).toHaveLength(1);
+    // The ground changes under the match; the match does not restart with it.
+    expect(state.players.map((p) => p.name)).toEqual(["one"]);
+    expect(state.status).toBe("Round 4.");
+  });
+
+  it("accepts a board with no terrain on it, as an older recording has", () => {
+    const state = after(empty, {
+      type: "game_started",
+      board: { width: 10, height: 10 },
+      max_rounds: 10,
+    });
+
+    expect(state.board?.obstacles).toBeUndefined();
+  });
+
   it("gives each player its own color and sprite, by join order and name", () => {
     const state = after(
       empty,

@@ -17,7 +17,11 @@ _SYSTEM_PROMPT = (
     "spell you actually carry. A bolt travels in a straight line along one of the eight "
     "directions, so it only reaches a robot that is on your row, your column or an exact diagonal "
     "from you: you are told exactly which shots would land, so take one of those and do not cast "
-    "into empty air when none is offered."
+    "into empty air when none is offered. The arena has terrain in it — trees, boulders, stone "
+    "walls, and somewhere on the board a stone well. Nothing walks onto an obstacle and no bolt "
+    "flies through one, so use them as cover and walk around them rather than into them. The "
+    "same goes for another robot, wrecked or not: a body holds its square, so you cannot walk "
+    "through one and a bolt stops at the first one it meets."
 )
 
 _NO_THINKING: dict[str, Any] = {

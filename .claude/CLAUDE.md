@@ -98,8 +98,48 @@ player never sees the board — only its own `GameView`, handed to it once per t
   `Action` is flat — `kind`, `direction`, `spell` — rather than a union of a move and a cast model,
   because `PlayerTurn` is handed to a model as a structured-output schema and a flat object
   survives guided decoding where an `anyOf` often does not.
+- **The board carries its terrain, and terrain is a rule like health.** `Board` holds a tuple of
+  `Obstacle`s — a `Position` and a `TerrainKind` of `tree`, `stone_wall`, `boulder` or
+  `stone_well`. Nothing walks
+  onto one and no bolt flies through one: `DefaultGame` blocks the move with the same
+  `move_blocked` event the board edge uses, and folds the blocked squares into the `occupied` set
+  it hands `Spell.cast`, so the spell needs no idea that terrain exists. It is fixed for a match, so
+  it rides on the frozen board rather than arriving as events — which is also what carries it to the
+  browser for free, inside `game_started` and inside the snapshot. A destructible wall would need
+  its own event and a mutable board, and is deliberately not what this is.
+- **`RandomBoardFactory` deals a fresh layout per match**, and `DefaultEngine` calls it before
+  `GameFactory`, so no two matches are fought over the same ground. A stone wall is *grown*, not
+  scattered: a run of cells in one of the four orthogonal directions, then either a ninety-degree
+  turn or a doorway and straight on. The turn is taken from the last cell laid, not the empty one
+  past it, or the corner comes out diagonal and the wall reads as two walls. A run cut short after
+  one cell is taken back again — a lone brick in a field looks like a mistake. Trees and boulders
+  are then scattered over what is left, and the well after them. Every layout is flood-filled from
+  the seats over all eight directions, because that is how a robot moves, and thrown away if a seat
+  cannot reach the others; twenty failures deal a bare board rather than looping. No obstacle is
+  ever laid on a seat or beside one.
+- **Terrain lasts a match, not a round.** `TerrainConfig.redeal_each_round` is off: cover that
+  moved every round left nothing worth taking, and a fight reads better over ground that holds
+  still. The machinery below is all still there and the flag turns it back on.
+- **When it is on, the arena is re-dealt between rounds rather than between matches.** `DefaultGame._redeal` asks
+  the factory for fresh ground before every round after the first, passing every robot's square as
+  `keep_clear` — which the factory already expands into a 3x3, so no wall is ever dealt onto a
+  robot or hemmed up against one, and its reachability check becomes exactly the invariant a
+  mid-match re-deal needs: nobody is walled away from the fight. Round one keeps the board the
+  match opened on, because `game_started` already announced it. Terrain holds still *within* a
+  round, so a plan is never invalidated halfway through the turn it was made for.
+- **`DefaultGame`'s `board_factory` is optional, and that is the switch.** A game re-deals if and
+  only if it was handed one, which is why `DefaultGameFactory` reads
+  `TerrainConfig.redeal_each_round` and passes `None` when it is off — the game domain never
+  imports the application's config to answer a question about itself. It also means every test
+  that constructs a `DefaultGame` with four arguments keeps its fixed board.
+- **There is one well or there is none, never two.** It is the landmark of the board, so
+  `TerrainConfig.well` is a flag where every other terrain knob is a range.
+- **The generator needs no new `Randomizer` method.** `choice(range(lo, hi + 1))` is a count,
+  `choice(range(n)) == 0` is a one-in-n coin, and `choice(free_cells)` is a square. Keeping the edge
+  module at one method is what lets `FixedRandomizer` cover the generator with no new fake.
 - **The view does the geometry, because the model cannot.** `Opponent` carries `direction` — the
-  way a bolt would have to be fired to reach it, or `None` when it is on no ray — and `distance`
+  way a bolt would have to be fired to reach it, `None` when it is on no ray *or when terrain
+  stands between* — and `distance`
   in steps, and `GameView` carries `max_health` so a robot can tell whether it is hurt. Measured
   over a real match before this existed, **78% of casts were fired when no direction could have
   hit anything**: a bolt travels only along the eight directions, and these models are poor at
@@ -127,6 +167,13 @@ player never sees the board — only its own `GameView`, handed to it once per t
   `DefaultEngine` builds its contestants **once per series** and reuses the objects.
 - **Players are keyed by object, not name** (`dict[Player, Position]`) — two contestants may share
   a name.
+- **A square holds one thing, and `DefaultGame._occupied` is the one place that says so.** Terrain
+  and every other robot, the scrapped included: a wreck is a body on a square, so it bars the way
+  and stops a bolt exactly as a boulder does. Movement, `Spell.cast`'s `occupied` set and the
+  view's line of sight all read that same set, so a move and a bolt can never disagree about what
+  is in the way. `Opponent.direction` therefore names the way to hit *that* robot — anything on
+  the ray takes it away — which is what makes the prompt's shot list true rather than merely
+  lined up.
 - `Direction` is a bare `StrEnum`. The deltas live in `DefaultGame`, because which way is "up" is a
   rule of the board, not a property of the word. Do not add a `delta` property to the enum.
 - Every event carries a `Position`, never loose `x`/`y` pairs.
@@ -217,13 +264,15 @@ One sub-package per agent, named after it: `simple_strands/` today.
 - `params` on `OpenAIModel` is spread straight into `client.chat.completions.create(**request)`
   by strands, so `extra_body` reaches the server as top-level JSON. That is the seam for any
   future server-specific knob.
-- `_AGENT_SEATS` in `DefaultEngine` is where the agents sit down, cycled — more agents than seats
-  still starts a game, they just share corners.
+- `_SEATS` in `DefaultEngine` is where the agents sit down: the four corners first, then any free
+  square, because two robots on one corner would start a match in a position the rules forbid.
+  Terrain is dealt around the corners, so a seat is never walled in.
 
 ## Configuration
 
 `interfaces/config/` holds `AgentConfig` (name plus one OpenAI-compatible endpoint and its
-budgets) and `AppConfig` (`agents`, plus `max_rounds` per match and `dummies`).
+budgets), `TerrainConfig` (how much scenery a generated board carries) and `AppConfig` (`agents`,
+plus `max_rounds` per match, `dummies` and `terrain`).
 `YamlConfigLoader` reads them from `agent-showdown.yaml`. `dummies` defaults to **zero**: an arena
 with no reachable agent should honestly pause rather than play a wanderer against itself.
 
@@ -284,6 +333,9 @@ Python side finds and serves what that project builds.
   The graceful-shutdown timeout is only a backstop.
 - `POST /api/start` answers **202 before the game runs**, so a refused concurrent start still
   answers 202. The refusal shows up as a log line, not a status code.
+- **Terrain reaches the client inside the board, so the reducer needed no case for it.** The
+  renderer's rebuild guard did: it compared width and height only, and every match is the same
+  size, so a new layout would never have been drawn. It compares a signature of the obstacles too.
 - **Events must stay in step across the two projects.** A new `GameListener` method needs its
   Python event model *and* the matching variant in `web_client/src/interfaces/game/game-event.ts`.
   `GameSnapshot` mirrors the same way, in `web_client/src/interfaces/game/game-snapshot.ts`.

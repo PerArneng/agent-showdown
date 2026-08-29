@@ -3,6 +3,7 @@ from collections.abc import Callable, Sequence
 
 from agent_showdown.interfaces.game import (
     Board,
+    BoardFactory,
     Game,
     GameFactory,
     GameListener,
@@ -14,9 +15,10 @@ from agent_showdown.interfaces.game import (
 )
 from agent_showdown.interfaces.log import Logger
 
-_BOARD = Board(width=10, height=10)
-# Where contestants sit down, in registration order. Cycled, so more robots than seats still
-# start a match — they just share corners.
+_BOARD_WIDTH = 10
+_BOARD_HEIGHT = 10
+# Where contestants sit down, in registration order. A fifth robot gets a square of its own
+# rather than a shared corner: two on one square is a position the rules no longer allow.
 _SEATS = (
     Position(x=0, y=0),
     Position(x=9, y=9),
@@ -39,6 +41,7 @@ class DefaultEngine:
     def __init__(
         self,
         logger: Logger,
+        board_factory: BoardFactory,
         game_factory: GameFactory,
         game_listeners: Sequence[GameListener],
         snapshot_source: SnapshotSource,
@@ -46,6 +49,7 @@ class DefaultEngine:
         max_rounds: int,
     ) -> None:
         self._logger = logger
+        self._board_factory = board_factory
         self._game_factory = game_factory
         self._game_listeners = game_listeners
         self._snapshot_source = snapshot_source
@@ -124,16 +128,39 @@ class DefaultEngine:
         return True
 
     def _play(self, players: Sequence[Player]) -> None:
-        # A fresh game per match, so health and seats reset while the scoreboard does not.
-        game = self._game_factory.create(_BOARD)
+        # A fresh board per match, so every match is fought over a layout of its own, and a
+        # fresh game, so health and seats reset while the scoreboard does not.
+        board = self._board_factory.create(_BOARD_WIDTH, _BOARD_HEIGHT, _SEATS)
+        game = self._game_factory.create(board)
         self._game = game
         for listener in self._game_listeners:  # first, so player_joined is observed
             game.add_listener(listener)
-        for index, player in enumerate(players):
-            game.register_player(player, _SEATS[index % len(_SEATS)])
+        for player, seat in zip(players, self._seats(board, len(players)), strict=True):
+            game.register_player(player, seat)
         if self._stopping.is_set():
             game.stop()
         game.start(max_rounds=self._max_rounds)
+
+    def _seats(self, board: Board, count: int) -> list[Position]:
+        """One square each: the corners first, then anywhere else that is free.
+
+        Robots may not stand on each other or on terrain, so seating two on one corner would
+        start the match in a position its own rules forbid. On a board too small to seat
+        everyone, the corners come round again — a cramped start beats no match at all.
+        """
+        blocked = {obstacle.position for obstacle in board.obstacles}
+        everywhere = (
+            Position(x=x, y=y) for y in range(board.height) for x in range(board.width)
+        )
+        seats: list[Position] = []
+        for square in (*_SEATS, *everywhere):
+            if len(seats) == count:
+                break
+            if square not in blocked and square not in seats:
+                seats.append(square)
+        while len(seats) < count:  # Nowhere left to put anyone. Share, as it used to.
+            seats.append(_SEATS[len(seats) % len(_SEATS)])
+        return seats
 
     def _emit(self, notify: Callable[[GameListener], None]) -> None:
         for listener in self._game_listeners:

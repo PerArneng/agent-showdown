@@ -1,5 +1,6 @@
 from agent_showdown.interfaces.game import (
     Board,
+    BoardChangedEvent,
     Direction,
     GameEndedEvent,
     GameStartedEvent,
@@ -48,6 +49,15 @@ def test_game_started_carries_the_board() -> None:
     ChannelGameListener(channel).game_started(_BOARD, max_rounds=10)
 
     assert channel.published == [GameStartedEvent(board=_BOARD, max_rounds=10)]
+
+
+def test_board_changed_carries_the_new_arena() -> None:
+    channel = InMemoryEventChannel()
+    redealt = Board(width=4, height=4)
+
+    ChannelGameListener(channel).board_changed(redealt)
+
+    assert channel.published == [BoardChangedEvent(board=redealt)]
 
 
 def test_player_joined_names_the_player() -> None:

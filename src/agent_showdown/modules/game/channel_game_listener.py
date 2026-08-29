@@ -3,6 +3,7 @@ from agent_showdown.interfaces.game import (
     ArenaPausedEvent,
     ArenaResumedEvent,
     Board,
+    BoardChangedEvent,
     Direction,
     GameEndedEvent,
     GameStartedEvent,
@@ -52,6 +53,9 @@ class ChannelGameListener:
         self._channel.publish(
             PlayerJoinedEvent(player=player.get_name(), position=position)
         )
+
+    def board_changed(self, board: Board) -> None:
+        self._channel.publish(BoardChangedEvent(board=board))
 
     def round_started(self, round_number: int) -> None:
         self._channel.publish(RoundStartedEvent(round_number=round_number))

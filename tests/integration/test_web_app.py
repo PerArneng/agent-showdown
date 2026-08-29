@@ -35,6 +35,7 @@ from agent_showdown.modules.game import (
 from agent_showdown.modules.log import AnsiLogFormatter, DefaultLogger
 from agent_showdown.web import create_app, stream_events
 from tests.fakes import (
+    FixedBoardFactory,
     FixedRandomizer,
     FrozenClock,
     InMemoryConsole,
@@ -106,8 +107,13 @@ class Fixture:
     def build_engine(self, extra_listeners: Sequence[GameListener]) -> DefaultEngine:
         return DefaultEngine(
             logger=self.logger,
+            board_factory=FixedBoardFactory(),
             game_factory=DefaultGameFactory(
-                FrozenClock(datetime(2025, 9, 10)), DefaultSpellBook(), DefaultScoreboard()
+                FrozenClock(datetime(2025, 9, 10)),
+                DefaultSpellBook(),
+                DefaultScoreboard(),
+                FixedBoardFactory(),
+                redeal_each_round=False,
             ),
             game_listeners=[LogGameListener(self.logger), *extra_listeners, self.snapshots],
             snapshot_source=self.snapshots,
@@ -306,7 +312,7 @@ def test_the_state_route_describes_the_game_that_was_played(app: Fixture) -> Non
     body = app.client.get("/api/state").json()
 
     # This is what a browser that connected mid-game needs and the stream never repeats.
-    assert body["board"] == {"width": 10, "height": 10}
+    assert body["board"] == {"width": 10, "height": 10, "obstacles": []}
     assert body["max_rounds"] == 2
     assert {player["name"] for player in body["players"]} == {"simple-strands-1"}
     assert all("position" in player for player in body["players"])

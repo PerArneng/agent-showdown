@@ -61,6 +61,11 @@ class SnapshotGameListener:
             PlayerSnapshot(name=player.get_name(), position=position)
         )
 
+    def board_changed(self, board: Board) -> None:
+        # Only the board. A client joining mid-match must be told the ground that is out
+        # there now, not the one this match opened on.
+        self._snapshot = self._snapshot.model_copy(update={"board": board})
+
     def round_started(self, round_number: int) -> None:
         self._snapshot = self._snapshot.model_copy(
             update={"round_number": round_number, "playing": True}

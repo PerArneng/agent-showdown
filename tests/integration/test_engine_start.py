@@ -3,10 +3,12 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 
+from agent_showdown.interfaces.config import TerrainConfig
 from agent_showdown.interfaces.game import (
     Action,
     ActionKind,
     Board,
+    BoardFactory,
     Direction,
     GameListener,
     Player,
@@ -21,10 +23,13 @@ from agent_showdown.modules.game import (
     DefaultSpellBook,
     DummyPlayerFactory,
     LogGameListener,
+    RandomBoardFactory,
     SnapshotGameListener,
 )
 from agent_showdown.modules.log import AnsiLogFormatter, DefaultLogger
+from agent_showdown.modules.randomizer import SystemRandomizer
 from tests.fakes import (
+    FixedBoardFactory,
     FixedRandomizer,
     FrozenClock,
     InMemoryConsole,
@@ -50,7 +55,13 @@ class Arena:
     thread, stopped by something the test controls.
     """
 
-    def __init__(self, *extra_listeners: GameListener, max_rounds: int = 2) -> None:
+    def __init__(
+        self,
+        *extra_listeners: GameListener,
+        max_rounds: int = 2,
+        board_factory: BoardFactory | None = None,
+        redeal_each_round: bool = False,
+    ) -> None:
         self.console = InMemoryConsole()
         self.registry = DefaultPlayerRegistry()
         self.snapshots = SnapshotGameListener()
@@ -62,7 +73,14 @@ class Arena:
         )
         self.engine = DefaultEngine(
             logger=logger,
-            game_factory=DefaultGameFactory(clock, DefaultSpellBook(), DefaultScoreboard()),
+            board_factory=board_factory or FixedBoardFactory(),
+            game_factory=DefaultGameFactory(
+                clock,
+                DefaultSpellBook(),
+                DefaultScoreboard(),
+                board_factory or FixedBoardFactory(),
+                redeal_each_round=redeal_each_round,
+            ),
             game_listeners=[
                 LogGameListener(logger),
                 self.recorder,
@@ -395,3 +413,57 @@ def test_the_roster_follows_robots_out_again() -> None:
     arena.engine.unregister_player("a")
 
     assert arena.engine.game_snapshot().registered == ("b",)
+
+
+def test_every_match_is_dealt_its_own_layout_of_terrain() -> None:
+    """The board is generated per match, so two matches are not fought over the same ground."""
+    two = After(2)
+    arena = Arena(
+        OnEvent("game_started", lambda board, max_rounds: two.fire()),
+        max_rounds=1,
+        board_factory=RandomBoardFactory(SystemRandomizer(seed=3), TerrainConfig()),
+    )
+    for player in arena.agents():
+        arena.engine.register_player(player)
+
+    arena.run_until(two.reached)
+
+    boards = [args[0] for name, args in arena.recorder.events if name == "game_started"]
+    assert len(boards) >= 2
+    assert all(board.obstacles for board in boards[:2])
+    assert boards[0].obstacles != boards[1].obstacles
+
+
+def test_more_robots_than_corners_still_get_a_square_each() -> None:
+    """Two on one corner would start the match in a position the rules forbid."""
+    seated = After(6)
+    arena = Arena(OnEvent("player_joined", lambda player, position: seated.fire()), max_rounds=1)
+    names = tuple(f"robot-{index}" for index in range(6))
+    for player in ScriptedAgentRoster(names, [_PLANNED]).create_players():
+        arena.engine.register_player(player)
+
+    arena.run_until(seated.reached)
+
+    positions = [
+        args[1] for name, args in arena.recorder.events if name == "player_joined"
+    ][:6]
+    assert len(set(positions)) == 6
+
+
+def test_the_arena_is_re_dealt_between_the_rounds_of_one_match() -> None:
+    """The whole point: a hundred-round match is not a hundred rounds on the same ground."""
+    changed = After(3)
+    arena = Arena(
+        OnEvent("board_changed", lambda board: changed.fire()),
+        max_rounds=8,
+        board_factory=RandomBoardFactory(SystemRandomizer(seed=2), TerrainConfig()),
+        redeal_each_round=True,
+    )
+    for player in arena.agents():
+        arena.engine.register_player(player)
+
+    arena.run_until(changed.reached)
+
+    layouts = [args[0].obstacles for name, args in arena.recorder.events if name == "board_changed"]
+    assert len(layouts) >= 3
+    assert len(set(layouts[:3])) == 3

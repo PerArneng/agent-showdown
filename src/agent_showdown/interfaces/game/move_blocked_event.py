@@ -7,7 +7,9 @@ from agent_showdown.interfaces.game.position import Position
 
 
 class MoveBlockedEvent(BaseModel):
-    """A move would have left the board, so the player stayed on `position`."""
+    """A move would have run off the board, into terrain or into another robot, so the player
+    stayed on `position`.
+    """
 
     model_config = ConfigDict(frozen=True)
 

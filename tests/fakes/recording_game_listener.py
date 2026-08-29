@@ -27,6 +27,9 @@ class RecordingGameListener:
     def player_joined(self, player: Player, position: Position) -> None:
         self.events.append(("player_joined", (player.get_name(), position)))
 
+    def board_changed(self, board: Board) -> None:
+        self.events.append(("board_changed", (board,)))
+
     def round_started(self, round_number: int) -> None:
         self.events.append(("round_started", (round_number,)))
 

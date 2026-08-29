@@ -7,10 +7,12 @@ from agent_showdown.interfaces.game import (
     Board,
     Direction,
     GameView,
+    Obstacle,
     Opponent,
     PlayerTurn,
     Position,
     SpellInfo,
+    TerrainKind,
 )
 from agent_showdown.modules.builtin_agents import SimpleStrandsPlayer
 from tests.fakes import ScriptedTurnPlanner
@@ -133,7 +135,7 @@ def test_the_prompt_says_which_robots_are_lined_up_and_which_are_not() -> None:
     prompt = _prompt_for(askew)
 
     assert "lined up RIGHT from you" in prompt
-    assert "askew" in prompt and "not lined up, so no bolt can reach it" in prompt
+    assert "askew" in prompt and "no bolt can reach it from where you stand" in prompt
 
 
 def test_the_prompt_gives_the_bearing_so_closing_needs_no_arithmetic() -> None:
@@ -210,3 +212,30 @@ def test_the_prompt_states_the_alignment_rule_with_the_spell() -> None:
     prompt = _prompt_for(_VIEW.model_copy(update={"spells": (fireball,)}))
 
     assert "Only travels along the eight directions." in prompt
+
+
+def test_the_prompt_names_the_terrain_by_kind_and_square() -> None:
+    view = _VIEW.model_copy(
+        update={
+            "board": Board(
+                width=3,
+                height=4,
+                obstacles=(
+                    Obstacle(position=Position(x=0, y=1), kind=TerrainKind.STONE_WALL),
+                    Obstacle(position=Position(x=1, y=1), kind=TerrainKind.STONE_WALL),
+                    Obstacle(position=Position(x=2, y=3), kind=TerrainKind.BOULDER),
+                ),
+            )
+        }
+    )
+
+    prompt = _prompt_for(view)
+
+    assert "stone wall at (0,1), (1,1)" in prompt
+    assert "boulder at (2,3)" in prompt
+    assert "no bolt flies through one" in prompt
+    assert "into an obstacle, or onto another robot, is refused" in prompt
+
+
+def test_a_clear_arena_says_so_rather_than_listing_nothing() -> None:
+    assert "The arena is clear of obstacles." in _prompt_for(_VIEW)

@@ -1,13 +1,15 @@
 import * as THREE from "three";
-import type { ClientState, Renderer } from "../../interfaces/game/index.js";
+import type { Board, ClientState, Renderer } from "../../interfaces/game/index.js";
 import { ModelLoader, type ModelKey } from "./model-loader.js";
+import { createObstacleMesh, obstacleRadius, type WallNeighbors } from "./obstacle-meshes.js";
 import { Terrain } from "./terrain.js";
 
 const CAMERA_DISTANCE = 24;
 const HOVER_HEIGHT = 0.45;
 const BOLT_HOVER_HEIGHT = 0.55;
 
-interface TreeInstance {
+/** Anything standing on the ground that a robot can end up behind: a border tree, or terrain. */
+interface SceneryInstance {
   readonly group: THREE.Group;
   readonly position: THREE.Vector3;
   readonly radius: number;
@@ -17,7 +19,6 @@ interface TreeInstance {
 
 interface PlayerMeshInstance {
   readonly group: THREE.Group;
-  readonly shadowMesh: THREE.Mesh;
   readonly runeRingGroup: THREE.Group;
   readonly healthBarGroup: THREE.Group;
   readonly healthFillMesh: THREE.Mesh;
@@ -45,8 +46,12 @@ export class ThreeBoardRenderer implements Renderer {
 
   private terrainMesh: THREE.Mesh | null = null;
   private terrainGroup: THREE.Group;
+  // The obstacles get a group of their own because the arena is re-dealt between rounds: only
+  // this is torn down and rebuilt, so the ground and the border trees do not flicker every round.
+  private obstacleGroup: THREE.Group;
   private readonly playersMap = new Map<string, PlayerMeshInstance>();
-  private readonly trees: TreeInstance[] = [];
+  private readonly borderTrees: SceneryInstance[] = [];
+  private readonly obstacles: SceneryInstance[] = [];
 
   private fireboltGroup: THREE.Group | null = null;
   private fireboltLight: THREE.PointLight | null = null;
@@ -54,6 +59,7 @@ export class ThreeBoardRenderer implements Renderer {
 
   private currentBoardWidth = 0;
   private currentBoardHeight = 0;
+  private currentLayout = "";
   private currentState: ClientState | null = null;
 
   private animationFrameId: number | null = null;
@@ -96,15 +102,15 @@ export class ThreeBoardRenderer implements Renderer {
     });
     this.renderer.setSize(canvas.width, canvas.height, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // 4. Lighting: Warm sun, atmospheric sky bounce, and ambient fill
+    // 4. Lighting: Warm sun from left, atmospheric sky bounce, and ambient fill
     this.setupLighting();
 
     // 5. Container groups
     this.terrainGroup = new THREE.Group();
     this.scene.add(this.terrainGroup);
+    this.obstacleGroup = new THREE.Group();
+    this.terrainGroup.add(this.obstacleGroup);
 
     // 6. Asynchronously preload 3D models and build default scenery
     void this.initModels();
@@ -117,33 +123,22 @@ export class ThreeBoardRenderer implements Renderer {
   }
 
   private setupLighting(): void {
-    // Warm sun light
-    const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.8);
-    sunLight.position.set(16, 28, 12);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 80;
-    const d = 12;
-    sunLight.shadow.camera.left = -d;
-    sunLight.shadow.camera.right = d;
-    sunLight.shadow.camera.top = d;
-    sunLight.shadow.camera.bottom = -d;
-    sunLight.shadow.bias = -0.0005;
+    // Unseen ambient sun: warm directional light coming in from the left side
+    const sunLight = new THREE.DirectionalLight(0xfff8ee, 1.3);
+    sunLight.position.set(-18, 26, 18);
     this.scene.add(sunLight);
 
-    // Secondary fill light from opposite angle
-    const fillLight = new THREE.DirectionalLight(0x7692c8, 0.7);
-    fillLight.position.set(-16, 15, -16);
+    // Sky/ambient bounce fill light from opposite right side
+    const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.5);
+    fillLight.position.set(18, 16, -18);
     this.scene.add(fillLight);
 
-    // Hemisphere sky/ground light
-    const hemiLight = new THREE.HemisphereLight(0xcae8ff, 0x4a3b2c, 0.6);
+    // Hemisphere sky/ground ambient light for natural atmospheric bounce
+    const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x5a4a3a, 0.7);
     this.scene.add(hemiLight);
 
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+    // Subtle global ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambientLight);
   }
 
@@ -167,14 +162,23 @@ export class ThreeBoardRenderer implements Renderer {
       return;
     }
 
-    // Rebuild terrain and trees if board dimensions change
+    // The ground is dug once per board size. The arena is re-dealt between rounds, so the
+    // obstacles are rebuilt far more often than the diorama they stand on — hence two decisions
+    // rather than one.
     if (
       this.currentBoardWidth !== state.board.width ||
       this.currentBoardHeight !== state.board.height
     ) {
-      this.buildTerrainAndScenery(state.board.width, state.board.height);
+      this.buildTerrain(state.board.width, state.board.height);
       this.currentBoardWidth = state.board.width;
       this.currentBoardHeight = state.board.height;
+      this.currentLayout = "";
+    }
+
+    const layout = layoutSignature(state.board);
+    if (this.currentLayout !== layout) {
+      this.placeObstacles(state.board);
+      this.currentLayout = layout;
     }
 
     // Update players
@@ -186,12 +190,16 @@ export class ThreeBoardRenderer implements Renderer {
 
   private clearBoard(): void {
     this.terrainGroup.clear();
+    this.obstacleGroup.clear();
+    this.terrainGroup.add(this.obstacleGroup);
     this.terrainMesh = null;
+    this.currentLayout = "";
     for (const p of this.playersMap.values()) {
       this.scene.remove(p.group);
     }
     this.playersMap.clear();
-    this.trees.length = 0;
+    this.borderTrees.length = 0;
+    this.obstacles.length = 0;
     if (this.fireboltGroup) {
       this.scene.remove(this.fireboltGroup);
       this.fireboltGroup = null;
@@ -202,9 +210,10 @@ export class ThreeBoardRenderer implements Renderer {
     }
   }
 
-  private buildTerrainAndScenery(width: number, height: number): void {
+  private buildTerrain(width: number, height: number): void {
     this.terrainGroup.clear();
-    this.trees.length = 0;
+    this.terrainGroup.add(this.obstacleGroup);  // Cleared by `placeObstacles`, not by this.
+    this.borderTrees.length = 0;
 
     // 1. Programmatic Low-Poly Terrain & Diorama Slab Geometry
     const geom = this.generateDioramaGeometry(width, height);
@@ -216,8 +225,6 @@ export class ThreeBoardRenderer implements Renderer {
     });
 
     this.terrainMesh = new THREE.Mesh(geom, mat);
-    this.terrainMesh.receiveShadow = true;
-    this.terrainMesh.castShadow = true;
     this.terrainGroup.add(this.terrainMesh);
 
     // 2. Subtle Tile Borders on the Ground
@@ -226,6 +233,53 @@ export class ThreeBoardRenderer implements Renderer {
 
     // 3. Place Low-Poly Trees along Scenic Border Outcroppings
     this.placeSceneryTrees(width, height);
+  }
+
+  /** Puts a mesh on every blocked square. The game decided where; this only draws it. */
+  private placeObstacles(board: Board): void {
+    this.obstacleGroup.clear();
+    this.obstacles.length = 0;
+    const obstacles = board.obstacles ?? [];
+    const wallPositions = new Set(
+      obstacles
+        .filter((o) => o.kind === "stone_wall")
+        .map((o) => `${o.position.x},${o.position.y}`),
+    );
+
+    for (const obstacle of obstacles) {
+      const { x, y, z } = this.terrain.gridToWorld(
+        obstacle.position.x,
+        obstacle.position.y,
+        board.width,
+        board.height,
+      );
+      const seed = obstacle.position.x * 73 + obstacle.position.y * 151;
+
+      let neighbors: WallNeighbors | undefined;
+      if (obstacle.kind === "stone_wall") {
+        const gx = obstacle.position.x;
+        const gy = obstacle.position.y;
+        neighbors = {
+          north: wallPositions.has(`${gx},${gy - 1}`),
+          south: wallPositions.has(`${gx},${gy + 1}`),
+          west: wallPositions.has(`${gx - 1},${gy}`),
+          east: wallPositions.has(`${gx + 1},${gy}`),
+        };
+      }
+
+      const model = createObstacleMesh(obstacle.kind, seed, this.modelLoader, neighbors);
+      model.position.set(x, y, z);
+      this.obstacleGroup.add(model);
+      // Occluded the same way as the border trees, so a robot standing behind one still shows
+      // through it. On-board terrain needs that far more than the scenery it was built for.
+      this.obstacles.push({
+        group: model,
+        position: new THREE.Vector3(x, y + 0.5, z),
+        radius: obstacleRadius(obstacle.kind),
+        currentOpacity: 1.0,
+        targetOpacity: 1.0,
+      });
+    }
   }
 
   /** Generates the complete 3D diorama geometry: top faceted grass and extruded earth slab. */
@@ -245,11 +299,8 @@ export class ThreeBoardRenderer implements Renderer {
     const stepX = totalW / totalX;
     const stepZ = totalH / totalZ;
 
-    const baseGrassA = new THREE.Color(0x6fae3f);
-    const baseGrassB = new THREE.Color(0x63a137);
-    const baseGrassC = new THREE.Color(0x7cbc47);
-    const baseGrassD = new THREE.Color(0x5a9530);
-    const borderGrass = new THREE.Color(0x55902c);
+    const baseGrass = new THREE.Color(0x6ca83c);
+    const borderGrass = new THREE.Color(0x56902e);
 
     const getTopVertex = (
       ix: number,
@@ -272,28 +323,12 @@ export class ThreeBoardRenderer implements Renderer {
         const v11 = getTopVertex(ix + 1, iz + 1);
         const v01 = getTopVertex(ix, iz + 1);
 
-        // Tile-based color variation for playable grid, darker meadow for border margin
-        let faceColorA: THREE.Color;
-        let faceColorB: THREE.Color;
-
-        if (v00.isBorder || v11.isBorder) {
-          faceColorA = (ix + iz) % 2 === 0 ? borderGrass : baseGrassB;
-          faceColorB = (ix + iz) % 2 === 0 ? baseGrassB : borderGrass;
-        } else {
-          const tileSum = v00.gx + v00.gy;
-          if (tileSum % 2 === 0) {
-            faceColorA = (ix + iz) % 2 === 0 ? baseGrassA : baseGrassC;
-            faceColorB = (ix + iz) % 2 === 0 ? baseGrassC : baseGrassA;
-          } else {
-            faceColorA = (ix + iz) % 2 === 0 ? baseGrassB : baseGrassD;
-            faceColorB = (ix + iz) % 2 === 0 ? baseGrassD : baseGrassB;
-          }
-        }
+        const faceColor = v00.isBorder || v11.isBorder ? borderGrass : baseGrass;
 
         // Triangle 1: (v00, v01, v10)
-        this.addTriangle(positions, colors, normals, v00, v01, v10, faceColorA);
+        this.addTriangle(positions, colors, normals, v00, v01, v10, faceColor);
         // Triangle 2: (v10, v01, v11)
-        this.addTriangle(positions, colors, normals, v10, v01, v11, faceColorB);
+        this.addTriangle(positions, colors, normals, v10, v01, v11, faceColor);
       }
     }
 
@@ -432,7 +467,7 @@ export class ThreeBoardRenderer implements Renderer {
     const lineMat = new THREE.LineBasicMaterial({
       color: 0x2f7832,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.15,
     });
     group.add(new THREE.LineSegments(lineGeom, lineMat));
     return group;
@@ -463,7 +498,7 @@ export class ThreeBoardRenderer implements Renderer {
       model.rotation.y = Math.sin(info.x * 3 + info.z * 5) * Math.PI;
 
       this.terrainGroup.add(model);
-      this.trees.push({
+      this.borderTrees.push({
         group: model,
         position: new THREE.Vector3(info.x, groundY + 1.2, info.z),
         radius: 1.4 * info.scale,
@@ -545,20 +580,7 @@ export class ThreeBoardRenderer implements Renderer {
   private createPlayerInstance(sprite: number, color: string, index: number): PlayerMeshInstance {
     const group = new THREE.Group();
 
-    // 1. Shadow Decal on the Ground
-    const shadowGeom = new THREE.CircleGeometry(0.36, 16);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.5,
-      depthWrite: false,
-    });
-    const shadowMesh = new THREE.Mesh(shadowGeom, shadowMat);
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = 0.015;
-    group.add(shadowMesh);
-
-    // 2. Active Thinking Rune Ring on Ground
+    // 1. Active Thinking Rune Ring on Ground
     const runeRingGroup = new THREE.Group();
     runeRingGroup.position.y = 0.02;
 
@@ -681,7 +703,6 @@ export class ThreeBoardRenderer implements Renderer {
 
     return {
       group,
-      shadowMesh,
       runeRingGroup,
       healthBarGroup,
       healthFillMesh,
@@ -853,15 +874,15 @@ export class ThreeBoardRenderer implements Renderer {
       activeRobots.push(new THREE.Vector3(p.currentPos.x, totalY, p.currentPos.z));
     }
 
-    // 2. Dynamic Tree Occlusion Transparency (X-Ray Effect)
-    this.updateTreeOcclusion(activeRobots);
+    // 2. Dynamic Scenery Occlusion Transparency (X-Ray Effect)
+    this.updateSceneryOcclusion(activeRobots);
   }
 
-  private updateTreeOcclusion(robotPositions: readonly THREE.Vector3[]): void {
+  private updateSceneryOcclusion(robotPositions: readonly THREE.Vector3[]): void {
     // Camera isometric view direction vector (from scene center towards camera)
     const camDir = new THREE.Vector3(1, 1, 1).normalize();
 
-    for (const tree of this.trees) {
+    for (const tree of [...this.borderTrees, ...this.obstacles]) {
       let isOccluding = false;
 
       for (const robotPos of robotPositions) {
@@ -925,4 +946,11 @@ export class ThreeBoardRenderer implements Renderer {
     window.removeEventListener("resize", this.handleResize);
     this.renderer.dispose();
   }
+}
+
+/** What the board looks like, as a string, so a rebuild can be decided by comparing two of them. */
+function layoutSignature(board: Board): string {
+  return (board.obstacles ?? [])
+    .map((obstacle) => `${obstacle.kind}:${obstacle.position.x},${obstacle.position.y}`)
+    .join("|");
 }

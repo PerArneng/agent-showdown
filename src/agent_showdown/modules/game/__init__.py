@@ -10,6 +10,7 @@ from agent_showdown.modules.game.dummy_player import DummyPlayer
 from agent_showdown.modules.game.dummy_player_factory import DummyPlayerFactory
 from agent_showdown.modules.game.fire_ball_spell import FireBallSpell
 from agent_showdown.modules.game.log_game_listener import LogGameListener
+from agent_showdown.modules.game.random_board_factory import RandomBoardFactory
 from agent_showdown.modules.game.snapshot_game_listener import SnapshotGameListener
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "DummyPlayerFactory",
     "FireBallSpell",
     "LogGameListener",
+    "RandomBoardFactory",
     "SnapshotGameListener",
 ]

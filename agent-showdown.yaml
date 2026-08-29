@@ -15,6 +15,27 @@ max_rounds: 100
 # Wandering stand-ins seated at startup, for a lively board with no model endpoints up.
 dummies: 1
 
+# Scenery. A fresh layout is dealt for every match: stone walls are grown as connected runs that
+# turn at right angles and sometimes leave a doorway, then trees, boulders and a single stone well
+# are scattered over what is left. Nothing walks onto an obstacle and no bolt flies through one, and no obstacle is
+# ever laid on a corner a robot sits down on, or beside one.
+terrain:
+  enabled: true
+  min_walls: 1        # structures, not cells
+  max_walls: 2
+  min_run: 2          # cells laid before the wall turns or leaves a gap
+  max_run: 4
+  max_turns: 2        # right-angle turns one structure may take
+  gap_in: 4           # a 1-in-4 chance of a doorway instead of a turn; 0 for none
+  min_trees: 2
+  max_trees: 5
+  min_boulders: 2
+  max_boulders: 5
+  well: true          # the arena's one landmark; there is never a second
+  # A fresh layout for every round rather than once per match. Off: cover that moved every round
+  # left nothing worth taking. Turn it on to have the arena re-dealt at every round boundary.
+  redeal_each_round: false
+
 agents:
   - name: qwen3.6-35b
     base_url: http://vllm.brain.home.arpa/v1

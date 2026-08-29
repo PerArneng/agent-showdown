@@ -1,16 +1,38 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+import boulder1Url from "../../assets/models/boulder-1.glb";
+import boulder2Url from "../../assets/models/boulder-2.glb";
 import fireboltUrl from "../../assets/models/fire-bolt.glb";
 import robot1Url from "../../assets/models/player-robot-1.glb";
 import robot2Url from "../../assets/models/player-robot-2.glb";
 import robot3Url from "../../assets/models/player-robot-3.glb";
 import robot4Url from "../../assets/models/player-robot-4.glb";
+import stoneWall2WayUrl from "../../assets/models/stone-wall-2way.glb";
+import stoneWall3WayUrl from "../../assets/models/stone-wall-3way.glb";
+import stoneWall4WayUrl from "../../assets/models/stone-wall-4way.glb";
+import stoneWallEndUrl from "../../assets/models/stone-wall-end.glb";
+import stoneWallMiddleUrl from "../../assets/models/stone-wall-middle.glb";
+import stoneWellUrl from "../../assets/models/stone-well.glb";
 import tree1Url from "../../assets/models/tree-1.glb";
 import tree2Url from "../../assets/models/tree-2.glb";
 
 export type ModelKey =
-  "robot-1" | "robot-2" | "robot-3" | "robot-4" | "tree-1" | "tree-2" | "fire-bolt";
+  | "robot-1"
+  | "robot-2"
+  | "robot-3"
+  | "robot-4"
+  | "tree-1"
+  | "tree-2"
+  | "boulder-1"
+  | "boulder-2"
+  | "stone-wall-middle"
+  | "stone-wall-end"
+  | "stone-wall-2way"
+  | "stone-wall-3way"
+  | "stone-wall-4way"
+  | "stone-well"
+  | "fire-bolt";
 
 const MODEL_URLS: Record<ModelKey, string> = {
   "robot-1": robot1Url,
@@ -19,6 +41,14 @@ const MODEL_URLS: Record<ModelKey, string> = {
   "robot-4": robot4Url,
   "tree-1": tree1Url,
   "tree-2": tree2Url,
+  "boulder-1": boulder1Url,
+  "boulder-2": boulder2Url,
+  "stone-wall-middle": stoneWallMiddleUrl,
+  "stone-wall-end": stoneWallEndUrl,
+  "stone-wall-2way": stoneWall2WayUrl,
+  "stone-wall-3way": stoneWall3WayUrl,
+  "stone-wall-4way": stoneWall4WayUrl,
+  "stone-well": stoneWellUrl,
   "fire-bolt": fireboltUrl,
 };
 
@@ -113,6 +143,7 @@ export class ModelLoader {
         flatShading: true,
       });
       fallback.add(new THREE.Mesh(geom, mat));
+      fallback.userData.modelKey = key;
       return fallback;
     }
 
@@ -128,6 +159,9 @@ export class ModelLoader {
       }
     });
 
+    // Says which model this is, so callers that pick between models can be tested on the choice
+    // rather than only on how they place it. Set on the fallback too, so a test needs no assets.
+    clone.userData.modelKey = key;
     return clone;
   }
 }

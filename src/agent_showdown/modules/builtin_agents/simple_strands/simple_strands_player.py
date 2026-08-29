@@ -1,5 +1,12 @@
 from agent_showdown.interfaces.builtin_agents import TurnPlanner
-from agent_showdown.interfaces.game import Direction, GameView, Opponent, PlayerTurn, SpellInfo
+from agent_showdown.interfaces.game import (
+    Direction,
+    GameView,
+    Obstacle,
+    Opponent,
+    PlayerTurn,
+    SpellInfo,
+)
 
 
 class SimpleStrandsPlayer:
@@ -32,14 +39,25 @@ class SimpleStrandsPlayer:
             f"Cell (0,0) is the top-left corner, so UP decreases y and DOWN increases y.\n"
             f"You are the robot {self._name}, standing on "
             f"({view.position.x},{view.position.y}) with {_health(view.health, view.max_health)}.\n"
+            f"{self._obstacles(view)}\n"
             f"{self._robots(view)}\n"
             f"{self._spells(view)}\n"
             f"{self._shots(view)}\n"
             f"Legal directions: {directions}.\n"
             f"Plan at most {self._max_actions} actions, applied in order. A move action steps one "
-            f"square in a direction; a move off the arena is refused and you stay where you are. "
+            f"square in a direction; a move off the arena, into an obstacle, or onto another "
+            f"robot, is refused and you stay where you are. "
             f"A cast action needs the name of a spell you carry and the direction to aim it.\n"
             f"Say briefly why you chose this plan."
+        )
+
+    def _obstacles(self, view: GameView) -> str:
+        """The terrain, spelled out square by square: the model is given no map to look at."""
+        if not view.board.obstacles:
+            return "The arena is clear of obstacles."
+        return "Obstacles — nothing walks onto one and no bolt flies through one:\n" + "\n".join(
+            f"- {_terrain(kind)} at {squares}"
+            for kind, squares in _by_kind(view.board.obstacles)
         )
 
     def _robots(self, view: GameView) -> str:
@@ -70,9 +88,22 @@ class SimpleStrandsPlayer:
             return "Shots that would land if you cast them now:\n" + "\n".join(shots)
         return (
             "No shot would land from where you stand: no living robot is on your row, your column "
-            "or an exact diagonal within range. Casting now would waste the action — move to line "
-            "one up first."
+            "or an exact diagonal within range, or the only one that is has an obstacle in the "
+            "way. Casting now would waste the action — move to line one up first."
         )
+
+
+def _by_kind(obstacles: tuple[Obstacle, ...]) -> list[tuple[str, str]]:
+    """One line per kind of terrain, rather than one per square, so the prompt stays short."""
+    grouped: dict[str, list[str]] = {}
+    for obstacle in obstacles:
+        squares = grouped.setdefault(obstacle.kind.value, [])
+        squares.append(f"({obstacle.position.x},{obstacle.position.y})")
+    return [(kind, ", ".join(squares)) for kind, squares in grouped.items()]
+
+
+def _terrain(kind: str) -> str:
+    return kind.replace("_", " ")
 
 
 def _health(health: int, maximum: int) -> str:
@@ -82,12 +113,16 @@ def _health(health: int, maximum: int) -> str:
 def _robot(opponent: Opponent, view: GameView) -> str:
     where = f"({opponent.position.x},{opponent.position.y})"
     if opponent.health <= 0:
-        return f"{opponent.name} at {where}, scrapped — it cannot fight, but it still blocks a bolt"
+        return (
+            f"{opponent.name} at {where}, scrapped — it cannot fight, but the wreck holds its "
+            f"square: you cannot walk through it and a bolt stops on it"
+        )
     bearing = _bearing(view, opponent)
     aim = (
         f"lined up {opponent.direction} from you"
         if opponent.direction is not None
-        else "not lined up, so no bolt can reach it from where you stand"
+        else "no bolt can reach it from where you stand — it is not lined up, or something "
+        "is in the way"
     )
     return (
         f"{opponent.name} at {where}, {_health(opponent.health, view.max_health)}, "

@@ -115,6 +115,9 @@ export class DefaultStateReducer implements StateReducer {
         };
       case "player_joined":
         return { ...state, players: this.joined(state, event.player, event.position) };
+      case "board_changed":
+        // Only the board. The line-up is mid-match and must survive the ground changing under it.
+        return { ...state, board: event.board };
       case "round_started":
         return { ...state, status: `Round ${event.round_number}.`, playing: true };
       case "player_moved":

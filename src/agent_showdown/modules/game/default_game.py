@@ -5,6 +5,7 @@ from agent_showdown.interfaces.game import (
     Action,
     ActionKind,
     Board,
+    BoardFactory,
     Direction,
     GameListener,
     GameView,
@@ -28,9 +29,21 @@ class DefaultGame:
     """One match on one board. Pure: no IO, no randomness; time only through the injected clock."""
 
     def __init__(
-        self, board: Board, clock: Clock, spell_book: SpellBook, scoreboard: Scoreboard
+        self,
+        board: Board,
+        clock: Clock,
+        spell_book: SpellBook,
+        scoreboard: Scoreboard,
+        board_factory: BoardFactory | None = None,
     ) -> None:
         self._board = board
+        # Optional, and the switch for the whole feature: the arena is re-dealt between rounds if
+        # and only if there is something to deal it. A game handed a board and nothing else keeps
+        # that board for the match.
+        self._board_factory = board_factory
+        # Terrain is fixed for the match, so the squares it blocks are worked out once. Nothing
+        # walks onto one and no bolt flies through one.
+        self._blocked = frozenset(obstacle.position for obstacle in board.obstacles)
         self._clock = clock
         self._spell_book = spell_book
         # Shared across every match of a series, which is the whole point: wins, eliminations and
@@ -71,6 +84,9 @@ class DefaultGame:
         self._emit(lambda listener: listener.game_ended(rounds_played))
 
     def _play_round(self, round_number: int) -> None:
+        # Round one is fought over the board the match opened on — the one `game_started` carried.
+        if round_number > 1:
+            self._redeal()
         self._emit(lambda listener: listener.round_started(round_number))
         for player in self._turn_order(round_number):
             # Checked between turns too: a hundred rounds of slow agents is a long time to wait
@@ -78,6 +94,27 @@ class DefaultGame:
             if self._stopping or self._is_decided():
                 return
             self._play_turn(player, round_number)
+
+    def _redeal(self) -> None:
+        """Lay fresh terrain for the round about to start, around wherever everybody is standing.
+
+        Every robot's square goes in as `keep_clear`, which the factory expands into its 3x3 — so
+        no wall is ever dealt onto a robot or hemmed up against one, and everybody still has
+        somewhere to step. The factory also refuses a layout that walls one robot away from
+        another, so a re-deal can never end the fight by accident. The wrecks are in there too:
+        their bodies hold their squares like anything else.
+
+        `_board` and `_blocked` are rebound together and read only by the thread playing the game,
+        so nothing can see one without the other.
+        """
+        if self._board_factory is None:
+            return
+        board = self._board_factory.create(
+            self._board.width, self._board.height, list(self._positions.values())
+        )
+        self._board = board
+        self._blocked = frozenset(obstacle.position for obstacle in board.obstacles)
+        self._emit(lambda listener: listener.board_changed(board))
 
     def _turn_order(self, round_number: int) -> list[Player]:
         """Registration order, rotated one seat per round.
@@ -146,24 +183,42 @@ class DefaultGame:
             round_number=round_number,
             health=self._health[player],
             max_health=_MAX_HEALTH,
-            # The eliminated are shown too, at zero health: their bodies still block a fireball.
+            # The eliminated are shown too, at zero health: a wreck is still in the way.
             opponents=tuple(
-                self._opponent(other, self._positions[player])
+                self._opponent(player, other)
                 for other in self._players
                 if other is not player
             ),
             spells=tuple(spell.describe() for spell in self._spells[player]),
         )
 
-    def _opponent(self, other: Player, origin: Position) -> Opponent:
-        """Describe one robot, with the geometry between it and whoever is looking, worked out."""
+    def _opponent(self, player: Player, other: Player) -> Opponent:
+        """Describe one robot, with the geometry between it and whoever is looking, worked out.
+
+        `direction` is the way to fire to hit *this* robot, so anything standing on the ray takes
+        it away — terrain, a wreck, or another robot that would eat the bolt first. That is what
+        makes the shot list the prompt is built from true rather than merely lined up.
+        """
         target = self._positions[other]
         return Opponent(
             name=other.get_name(),
             position=target,
             health=self._health[other],
-            direction=_direction_between(origin, target),
-            distance=_steps_between(origin, target),
+            direction=_line_of_sight(
+                self._positions[player], target, self._occupied(player) - {target}
+            ),
+            distance=_steps_between(self._positions[player], target),
+        )
+
+    def _occupied(self, player: Player) -> frozenset[Position]:
+        """Every square `player` can neither stand on nor fire through.
+
+        Terrain and every other robot, the scrapped included: a wreck is a body on a square, so it
+        bars the way and stops a bolt exactly as a boulder does. One notion, so a move and a bolt
+        can never disagree about what is in the way.
+        """
+        return self._blocked | frozenset(
+            self._positions[other] for other in self._players if other is not player
         )
 
     def _report_stats(self, player: Player) -> None:
@@ -177,7 +232,7 @@ class DefaultGame:
         source = self._positions[player]
         dx, dy = DELTAS[direction]
         destination = Position(x=source.x + dx, y=source.y + dy)
-        if not self._is_on_board(destination):
+        if not self._is_on_board(destination) or destination in self._occupied(player):
             self._emit(lambda listener: listener.move_blocked(player, source, direction))
             return
         self._positions[player] = destination
@@ -188,12 +243,7 @@ class DefaultGame:
         if spell is None:  # Judged before anything was applied; here for the type only.
             return
         origin = self._positions[player]
-        occupied = frozenset(
-            self._positions[other]
-            for other in self._players
-            if other is not player and self._is_alive(other)
-        )
-        effect = spell.cast(origin, action.direction, self._board, occupied)
+        effect = spell.cast(origin, action.direction, self._board, self._occupied(player))
         name = action.spell
         self._emit(
             lambda listener: listener.spell_cast(
@@ -271,6 +321,27 @@ class DefaultGame:
     def _emit(self, notify: Callable[[GameListener], None]) -> None:
         for listener in self._listeners:
             notify(listener)
+
+
+def _line_of_sight(
+    origin: Position, target: Position, blocked: frozenset[Position]
+) -> Direction | None:
+    """The direction a bolt must be fired to reach `target`, or None if nothing could reach it.
+
+    Terrain in the way makes it None: a bolt stops at the first obstacle, so a target behind one
+    is not a target. A robot in the way does not, because a bolt fired down that line still lands
+    on somebody — which is a choice the caster is allowed to make.
+    """
+    direction = _direction_between(origin, target)
+    if direction is None:
+        return None
+    dx, dy = DELTAS[direction]
+    square = Position(x=origin.x + dx, y=origin.y + dy)
+    while square != target:
+        if square in blocked:
+            return None
+        square = Position(x=square.x + dx, y=square.y + dy)
+    return direction
 
 
 def _direction_between(origin: Position, target: Position) -> Direction | None:

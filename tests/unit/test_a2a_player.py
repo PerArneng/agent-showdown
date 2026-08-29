@@ -44,7 +44,7 @@ def test_take_turn_sends_the_view_as_json_under_the_context_id() -> None:
     context_id, payload = client.sent[0]
     assert context_id == "game-7"
     assert json.loads(payload) == {
-        "board": {"width": 3, "height": 3},
+        "board": {"width": 3, "height": 3, "obstacles": []},
         "position": {"x": 1, "y": 1},
         "round_number": 2,
         "health": 100,

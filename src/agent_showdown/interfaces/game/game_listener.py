@@ -40,6 +40,14 @@ class GameListener(Protocol):
         """A player was registered at its starting position."""
         ...
 
+    def board_changed(self, board: Board) -> None:
+        """The arena has been re-dealt for the round about to start.
+
+        Terrain is fixed *within* a round, so a plan is never invalidated halfway through the
+        turn it was made for.
+        """
+        ...
+
     def round_started(self, round_number: int) -> None:
         """A new round begins. Rounds are numbered from 1."""
         ...
@@ -90,7 +98,8 @@ class GameListener(Protocol):
         ...
 
     def move_blocked(self, player: Player, position: Position, direction: Direction) -> None:
-        """A move would have left the board, so the player stayed on `position`."""
+        """A move would have run off the board, into terrain or into another robot, so the
+        player stayed on `position`."""
         ...
 
     def turn_failed(self, player: Player, reason: str) -> None:

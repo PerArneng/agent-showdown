@@ -99,7 +99,7 @@ def test_the_agent_is_asked_once_per_round_under_a_stable_context_id() -> None:
         {"x": 1, "y": 0},
         {"x": 1, "y": 1},
     ]
-    assert views[0]["board"] == {"width": 5, "height": 5}
+    assert views[0]["board"] == {"width": 5, "height": 5, "obstacles": []}
 
 
 def test_a_dead_agent_fails_its_turns_but_the_game_finishes() -> None:

@@ -19,6 +19,7 @@ from agent_showdown.modules.game import (
     DefaultSpellBook,
     DummyPlayerFactory,
     LogGameListener,
+    RandomBoardFactory,
     SnapshotGameListener,
 )
 from agent_showdown.modules.log import AnsiLogFormatter, DefaultLogger
@@ -43,6 +44,10 @@ class Container(containers.DeclarativeContainer):
         formatter=log_formatter,
         console=console,
     )
+    # A fresh layout of trees, boulders and stone walls for every match.
+    board_factory = providers.Singleton(
+        RandomBoardFactory, randomizer=randomizer, config=config.provided.terrain
+    )
     spell_book = providers.Singleton(DefaultSpellBook)
     # A singleton, so eliminations, deaths and wins survive the match they were earned in.
     scoreboard = providers.Singleton(DefaultScoreboard)
@@ -51,6 +56,8 @@ class Container(containers.DeclarativeContainer):
         clock=clock,
         spell_book=spell_book,
         scoreboard=scoreboard,
+        board_factory=board_factory,
+        redeal_each_round=config.provided.terrain.redeal_each_round,
     )
     player_factory = providers.Singleton(
         DummyPlayerFactory,
@@ -83,6 +90,7 @@ class Container(containers.DeclarativeContainer):
     engine = providers.Singleton(
         DefaultEngine,
         logger=logger,
+        board_factory=board_factory,
         game_factory=game_factory,
         game_listeners=game_listeners,
         snapshot_source=snapshot_game_listener,

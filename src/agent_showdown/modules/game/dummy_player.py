@@ -6,6 +6,7 @@ from agent_showdown.interfaces.game import (
     GameView,
     Opponent,
     PlayerTurn,
+    Position,
 )
 from agent_showdown.interfaces.randomizer import Randomizer
 from agent_showdown.modules.game.deltas import DELTAS
@@ -17,6 +18,8 @@ class DummyPlayer:
     Not an agent: it reasons about nothing and calls no model. It takes the shot in front of it,
     walks towards whoever is nearest when there is no shot, and wanders when the arena is empty —
     which is enough to pressure a real agent instead of standing around being target practice.
+    It steps round whatever is in the way rather than into it, so neither a boulder nor another
+    robot pins it in place for a match.
 
     It pauses before answering, which buys nothing except that a human watching the board can see
     it move. Real thinking would take time too.
@@ -43,13 +46,13 @@ class DummyPlayer:
                 ),
             )
         target = self._nearest(view)
-        if target is not None:
-            direction = _towards(view, target)
+        step = self._towards(view, target) if target is not None else None
+        if target is not None and step is not None:
             return PlayerTurn(
                 reasoning=f"closing on {target.name}, {target.distance} away",
-                actions=(Action(kind=ActionKind.MOVE, direction=direction),),
+                actions=(Action(kind=ActionKind.MOVE, direction=step),),
             )
-        direction = self._randomizer.choice(list(Direction))
+        direction = self._randomizer.choice(_open(view) or list(Direction))
         return PlayerTurn(
             reasoning=f"no plan, wandering {direction}",
             actions=(Action(kind=ActionKind.MOVE, direction=direction),),
@@ -67,6 +70,13 @@ class DummyPlayer:
                     return spell.name, opponent
         return None
 
+    def _towards(self, view: GameView, target: Opponent) -> Direction | None:
+        """The first step that closes the gap and is not into terrain, or None if all are."""
+        for direction in _closing(view, target):
+            if _is_open(view, direction):
+                return direction
+        return None
+
     def _nearest(self, view: GameView) -> Opponent | None:
         living = [opponent for opponent in view.opponents if opponent.health > 0]
         if not living:
@@ -80,14 +90,37 @@ def _aim(opponent: Opponent) -> Direction:
     return opponent.direction
 
 
-def _towards(view: GameView, target: Opponent) -> Direction:
-    """One step that closes the gap, diagonally where both axes are still apart."""
+def _closing(view: GameView, target: Opponent) -> list[Direction]:
+    """Steps that close the gap, best first: the diagonal, then either axis on its own.
+
+    The axis-only steps are what gets it round an obstacle standing on the diagonal.
+    """
     step_x = _sign(target.position.x - view.position.x)
     step_y = _sign(target.position.y - view.position.y)
-    for direction, delta in DELTAS.items():
-        if delta == (step_x, step_y):
-            return direction
-    return Direction.UP  # Only reachable if already on the target's square.
+    wanted = [(step_x, step_y), (step_x, 0), (0, step_y)]
+    return [
+        direction
+        for delta in wanted
+        if delta != (0, 0)
+        for direction, offset in DELTAS.items()
+        if offset == delta
+    ]
+
+
+def _open(view: GameView) -> list[Direction]:
+    """Every direction that would not be refused: on the arena, and onto an empty square."""
+    return [direction for direction in Direction if _is_open(view, direction)]
+
+
+def _is_open(view: GameView, direction: Direction) -> bool:
+    dx, dy = DELTAS[direction]
+    square = Position(x=view.position.x + dx, y=view.position.y + dy)
+    if not (0 <= square.x < view.board.width and 0 <= square.y < view.board.height):
+        return False
+    if any(obstacle.position == square for obstacle in view.board.obstacles):
+        return False
+    # A wreck counts: it holds its square whether or not it can still fight back.
+    return all(opponent.position != square for opponent in view.opponents)
 
 
 def _sign(value: int) -> int:

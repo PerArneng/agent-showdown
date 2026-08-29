@@ -21,7 +21,10 @@ class FireBallSpell:
             description=(
                 f"A bolt of fire down one direction. It travels up to {_RANGE} squares and burns"
                 f" the first robot in its way for {_DAMAGE} damage. It stops there, so a robot"
-                " standing behind another is safe. It only travels along the eight directions, so"
+                " standing behind another — or behind a wreck — is safe. A tree, a boulder, a"
+                " wall or the well stops it dead in the same way, so it cannot be fired through"
+                " cover."
+                " It only travels along the eight directions, so"
                 " it reaches a robot only when that robot is on your row, your column or an exact"
                 " diagonal from you. Fired at anything else it hits nothing and the action is"
                 " wasted."

@@ -1,18 +1,27 @@
 from datetime import datetime
 
 from agent_showdown.interfaces.clock import Clock
+from agent_showdown.interfaces.config import TerrainConfig
 from agent_showdown.interfaces.game import (
     Action,
     ActionKind,
     Board,
     Direction,
     GameView,
+    Obstacle,
     Opponent,
     PlayerStats,
     PlayerTurn,
     Position,
+    TerrainKind,
 )
-from agent_showdown.modules.game import DefaultGame, DefaultScoreboard, DefaultSpellBook
+from agent_showdown.modules.game import (
+    DefaultGame,
+    DefaultScoreboard,
+    DefaultSpellBook,
+    RandomBoardFactory,
+)
+from agent_showdown.modules.randomizer import SystemRandomizer
 from tests.fakes import FrozenClock, RecordingGameListener, ScriptedClock
 
 
@@ -880,3 +889,208 @@ def test_a_robot_is_told_what_full_health_is() -> None:
 
     # Without a maximum, a robot cannot tell whether 40 health is healthy or nearly dead.
     assert watcher.views[0].max_health == 100
+
+
+def _walled(*squares: Position, kind: TerrainKind = TerrainKind.STONE_WALL) -> Board:
+    return Board(
+        width=3,
+        height=3,
+        obstacles=tuple(Obstacle(position=square, kind=kind) for square in squares),
+    )
+
+
+def test_a_move_into_terrain_is_blocked_and_leaves_the_position_untouched() -> None:
+    game = _game(board=_walled(Position(x=1, y=0)))
+    listener = RecordingGameListener()
+    game.add_listener(listener)
+    player = ScriptedPlayer("a", Direction.RIGHT)
+    game.register_player(player, Position(x=0, y=0))
+
+    game.start(max_rounds=1)
+
+    assert ("move_blocked", ("a", Position(x=0, y=0), Direction.RIGHT)) in listener.events
+    assert ("player_moved", ("a", Position(x=0, y=0), Position(x=1, y=0))) not in listener.events
+
+
+def test_a_bolt_stops_at_terrain_and_burns_nobody_behind_it() -> None:
+    game = _game(board=_walled(Position(x=1, y=0), kind=TerrainKind.BOULDER))
+    listener = RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(PlanningPlayer("a", _cast(Direction.RIGHT)), Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=2, y=0))
+
+    game.start(max_rounds=1)
+
+    assert (
+        "spell_cast",
+        ("a", "fireball", Position(x=0, y=0), Direction.RIGHT, (Position(x=1, y=0),)),
+    ) in listener.events
+    assert "player_hit" not in listener.names()
+
+
+def test_an_opponent_behind_terrain_is_reported_as_out_of_line() -> None:
+    game = _game(board=_walled(Position(x=1, y=1)))
+    looking = ScriptedPlayer("a")
+    game.register_player(looking, Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=2, y=2))
+
+    game.start(max_rounds=1)
+
+    assert looking.views[0].opponents[0].direction is None
+    assert looking.views[0].opponents[0].distance == 2
+
+
+def test_an_opponent_on_a_clear_ray_is_still_lined_up() -> None:
+    game = _game(board=_walled(Position(x=0, y=1)))
+    looking = ScriptedPlayer("a")
+    game.register_player(looking, Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=2, y=2))
+
+    game.start(max_rounds=1)
+
+    assert looking.views[0].opponents[0].direction == Direction.DOWN_RIGHT
+
+
+def test_a_move_onto_another_robot_is_blocked() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a", Direction.RIGHT), Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=1, y=0))
+
+    game.start(max_rounds=1)
+
+    assert ("move_blocked", ("a", Position(x=0, y=0), Direction.RIGHT)) in listener.events
+    assert "player_moved" not in listener.names()
+
+
+def test_a_wreck_holds_its_square_against_the_living() -> None:
+    """A robot burned down to nothing is still a body on the board, not an empty square."""
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    # Seven bolts a round, then a step onto the square. Ten bolts kill, so the walk is refused
+    # first by a robot that can still fight back and then by the wreck it leaves behind.
+    walker = PlanningPlayer("a", *([_cast(Direction.RIGHT)] * 7), _move(Direction.RIGHT))
+    game.register_player(walker, Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=1, y=0))
+
+    game.start(max_rounds=2)
+
+    # `b` never gets another turn — the match is decided the moment it goes down — so its
+    # health hitting zero is what says it is a wreck by the time the second walk is tried.
+    names = listener.names()
+    assert ("player_updated", ("b", 0)) in listener.events
+    assert names.count("move_blocked") == 2
+    assert names.index("player_updated") < len(names) - 1 - names[::-1].index("move_blocked")
+    assert ("player_moved", ("a", Position(x=0, y=0), Position(x=1, y=0))) not in listener.events
+
+
+def test_a_bolt_stops_on_a_wreck_and_spares_whoever_stands_behind_it() -> None:
+    game = _game(board=Board(width=4, height=1))
+    listener = RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(PlanningPlayer("a", *([_cast(Direction.RIGHT)] * 8)), Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=1, y=0))
+    game.register_player(IdlePlayer("c"), Position(x=2, y=0))
+
+    game.start(max_rounds=2)
+
+    burned = {name for event, (name, *_) in listener.events if event == "player_hit"}
+    assert burned == {"b"}  # Sixteen bolts, every one of them stopped on `b`, alive and then dead.
+
+
+def test_an_opponent_behind_another_robot_is_reported_as_out_of_line() -> None:
+    """`direction` names the way to hit *that* robot, so a body on the ray takes it away."""
+    game = _game(board=Board(width=4, height=1))
+    looking = ScriptedPlayer("a")
+    game.register_player(looking, Position(x=0, y=0))
+    game.register_player(IdlePlayer("blocker"), Position(x=1, y=0))
+    game.register_player(IdlePlayer("hidden"), Position(x=2, y=0))
+
+    game.start(max_rounds=1)
+
+    seen = {opponent.name: opponent.direction for opponent in looking.views[0].opponents}
+    assert seen["blocker"] == Direction.RIGHT
+    assert seen["hidden"] is None
+
+
+def _redealing_game(seed: int = 1) -> DefaultGame:
+    """A game that lays fresh terrain for every round after the first."""
+    return DefaultGame(
+        Board(width=8, height=8),
+        FrozenClock(datetime(2025, 9, 10)),
+        DefaultSpellBook(),
+        DefaultScoreboard(),
+        RandomBoardFactory(SystemRandomizer(seed=seed), TerrainConfig()),
+    )
+
+
+def test_every_round_after_the_first_is_fought_over_fresh_ground() -> None:
+    game, listener = _redealing_game(), RecordingGameListener()
+    game.add_listener(listener)
+    watcher = ScriptedPlayer("a")
+    game.register_player(watcher, Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=7, y=7))
+
+    game.start(max_rounds=4)
+
+    layouts = [view.board.obstacles for view in watcher.views]
+    assert len(layouts) == 4
+    assert len(set(layouts)) == 4  # Four rounds, four different arenas.
+
+
+def test_the_first_round_keeps_the_board_the_match_opened_on() -> None:
+    """`game_started` already announced that board, so re-dealing it would be a lie."""
+    game, listener = _redealing_game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a"), Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=7, y=7))
+
+    game.start(max_rounds=3)
+
+    names = listener.names()
+    assert names.count("board_changed") == 2  # Rounds 2 and 3, not round 1.
+    assert names.index("round_started") < names.index("board_changed")
+
+
+def test_fresh_terrain_is_never_dealt_onto_a_robot_or_up_against_one() -> None:
+    game, listener = _redealing_game(seed=7), RecordingGameListener()
+    game.add_listener(listener)
+    # Both wander, so the re-deals happen around robots that are somewhere new each round.
+    game.register_player(ScriptedPlayer("a", Direction.DOWN_RIGHT), Position(x=0, y=0))
+    game.register_player(ScriptedPlayer("b", Direction.UP_LEFT), Position(x=7, y=7))
+
+    game.start(max_rounds=6)
+
+    for board, positions in _boards_and_positions(listener):
+        for obstacle in board.obstacles:
+            for square in positions:
+                assert max(
+                    abs(obstacle.position.x - square.x), abs(obstacle.position.y - square.y)
+                ) > 1
+
+
+def test_a_game_given_no_board_factory_keeps_its_board_for_the_match() -> None:
+    game = _game(board=_walled(Position(x=1, y=1)))
+    watcher = ScriptedPlayer("a")
+    game.register_player(watcher, Position(x=0, y=0))
+    game.register_player(IdlePlayer("b"), Position(x=2, y=2))
+
+    game.start(max_rounds=3)
+
+    assert len({view.board for view in watcher.views}) == 1
+
+
+def _boards_and_positions(
+    listener: RecordingGameListener,
+) -> list[tuple[Board, list[Position]]]:
+    """Every re-dealt board, paired with where the robots stood when it was laid."""
+    positions: dict[str, Position] = {}
+    pairs: list[tuple[Board, list[Position]]] = []
+    for name, args in listener.events:
+        if name == "player_joined":
+            positions[args[0]] = args[1]
+        elif name == "player_moved":
+            positions[args[0]] = args[2]
+        elif name == "board_changed":
+            pairs.append((args[0], list(positions.values())))
+    return pairs

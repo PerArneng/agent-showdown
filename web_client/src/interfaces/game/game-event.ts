@@ -32,6 +32,12 @@ export interface GameStartedEvent {
   readonly max_rounds: number;
 }
 
+/** The arena was re-dealt: this is the ground the coming round is fought over. */
+export interface BoardChangedEvent {
+  readonly type: "board_changed";
+  readonly board: Board;
+}
+
 export interface PlayerJoinedEvent {
   readonly type: "player_joined";
   readonly player: string;
@@ -139,6 +145,7 @@ export type GameEvent =
   | PlayerUnregisteredEvent
   | GameStartedEvent
   | PlayerJoinedEvent
+  | BoardChangedEvent
   | RoundStartedEvent
   | PlayerTurnStartedEvent
   | PlayerTurnEndedEvent
