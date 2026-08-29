@@ -1,6 +1,8 @@
 export type { Board } from "./board.js";
 export type { ClientState } from "./client-state.js";
 export type {
+  ArenaPausedEvent,
+  ArenaResumedEvent,
   GameEndedEvent,
   GameEvent,
   GameStartedEvent,
@@ -9,11 +11,13 @@ export type {
   PlayerHitEvent,
   PlayerJoinedEvent,
   PlayerMovedEvent,
+  PlayerRegisteredEvent,
   PlayerReasonedEvent,
   PlayerStats,
   PlayerStatsEvent,
   PlayerTurnEndedEvent,
   PlayerTurnStartedEvent,
+  PlayerUnregisteredEvent,
   PlayerUpdatedEvent,
   RoundStartedEvent,
   SpellCastEvent,

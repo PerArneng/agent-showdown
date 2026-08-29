@@ -10,11 +10,13 @@ from agent_showdown.interfaces.game import (
     PlayerJoinedEvent,
     PlayerMovedEvent,
     PlayerReasonedEvent,
+    PlayerRegisteredEvent,
     PlayerStats,
     PlayerStatsEvent,
     PlayerTurn,
     PlayerTurnEndedEvent,
     PlayerTurnStartedEvent,
+    PlayerUnregisteredEvent,
     PlayerUpdatedEvent,
     Position,
     RoundStartedEvent,
@@ -186,3 +188,19 @@ def test_a_health_change_publishes_what_is_left() -> None:
     ChannelGameListener(channel).player_updated(NamedPlayer("bob"), 40)
 
     assert channel.published == [PlayerUpdatedEvent(player="bob", health=40)]
+
+
+def test_entering_the_arena_publishes_the_robot_that_entered() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_registered(NamedPlayer("newcomer"))
+
+    assert channel.published == [PlayerRegisteredEvent(player="newcomer")]
+
+
+def test_leaving_the_arena_publishes_the_name_that_left() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_unregistered("quitter")
+
+    assert channel.published == [PlayerUnregisteredEvent(player="quitter")]

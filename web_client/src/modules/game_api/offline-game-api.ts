@@ -6,12 +6,14 @@ const NOTHING_YET: GameSnapshot = {
   max_rounds: 0,
   round_number: 0,
   playing: false,
+  paused: false,
+  registered: [],
   players: [],
 };
 
 /** Demo mode. There is no server to ask; the fixture is already playing. */
 export class OfflineGameApi implements GameApi {
-  async startGame(): Promise<void> {}
+  async newGame(): Promise<void> {}
 
   async fetchSnapshot(): Promise<GameSnapshot> {
     return NOTHING_YET;

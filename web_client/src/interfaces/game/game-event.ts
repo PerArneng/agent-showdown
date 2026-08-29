@@ -5,6 +5,27 @@ import type { Position } from "./position.js";
  * Mirrors `interfaces/game/*_event.py`, discriminated on `type` exactly as the Pydantic union is.
  * Written by hand for now; generating it from the server's JSON schema is the obvious follow-up.
  */
+/** The arena has nobody registered, so no match can start until somebody joins. */
+export interface ArenaPausedEvent {
+  readonly type: "arena_paused";
+}
+
+export interface ArenaResumedEvent {
+  readonly type: "arena_resumed";
+}
+
+/** A robot entered the arena. It is seated in the next match, not the one in flight. */
+export interface PlayerRegisteredEvent {
+  readonly type: "player_registered";
+  readonly player: string;
+}
+
+/** A robot left the arena. It plays out the match in flight and is not seated again. */
+export interface PlayerUnregisteredEvent {
+  readonly type: "player_unregistered";
+  readonly player: string;
+}
+
 export interface GameStartedEvent {
   readonly type: "game_started";
   readonly board: Board;
@@ -112,6 +133,10 @@ export interface GameEndedEvent {
 }
 
 export type GameEvent =
+  | ArenaPausedEvent
+  | ArenaResumedEvent
+  | PlayerRegisteredEvent
+  | PlayerUnregisteredEvent
   | GameStartedEvent
   | PlayerJoinedEvent
   | RoundStartedEvent

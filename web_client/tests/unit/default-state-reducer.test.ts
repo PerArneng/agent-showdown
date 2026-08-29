@@ -16,8 +16,61 @@ describe("DefaultStateReducer", () => {
       players: [],
       status: "Waiting.",
       playing: false,
+      paused: false,
+      registered: [],
       thinking: null,
     });
+  });
+
+  it("says so while the arena has nobody to play", () => {
+    const state = after(empty, { type: "arena_paused" });
+
+    expect(state.paused).toBe(true);
+    expect(state.playing).toBe(false);
+    expect(state.status).toContain("join");
+  });
+
+  it("stops saying so once a robot joins", () => {
+    const paused = after(empty, { type: "arena_paused" });
+
+    const state = after(paused, { type: "arena_resumed" });
+
+    expect(state.paused).toBe(false);
+  });
+
+  it("forgets who was thinking when the arena pauses", () => {
+    const thinking = after(empty, { type: "player_turn_started", player: "a" });
+
+    const state = after(thinking, { type: "arena_paused" });
+
+    expect(state.thinking).toBeNull();
+  });
+
+  it("lists a robot that entered the arena before any match seated it", () => {
+    const state = after(empty, { type: "player_registered", player: "newcomer" });
+
+    expect(state.registered).toEqual(["newcomer"]);
+    // In the arena is not the same as on the board.
+    expect(state.players).toEqual([]);
+  });
+
+  it("does not list the same robot twice", () => {
+    const once = after(empty, { type: "player_registered", player: "a" });
+
+    const twice = after(once, { type: "player_registered", player: "a" });
+
+    expect(twice.registered).toEqual(["a"]);
+  });
+
+  it("drops a robot that left the arena", () => {
+    const joined = after(
+      after(empty, { type: "player_registered", player: "a" }),
+      { type: "player_registered", player: "b" },
+    );
+
+    const state = after(joined, { type: "player_unregistered", player: "a" });
+
+    expect(state.registered).toEqual(["b"]);
   });
 
   it("takes the board from game_started and clears thinking", () => {
@@ -373,6 +426,8 @@ describe("DefaultStateReducer", () => {
       max_rounds: 10,
       round_number: 4,
       playing: true,
+      paused: false,
+      registered: [],
       players: [
         {
           name: "one",
@@ -448,6 +503,8 @@ describe("DefaultStateReducer", () => {
         max_rounds: 0,
         round_number: 0,
         playing: false,
+        paused: false,
+        registered: [],
         players: [],
       };
 

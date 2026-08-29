@@ -4,12 +4,12 @@ import type { GameApi } from "../../interfaces/game_api/index.js";
 /** Edge module. The only code that calls `fetch`. */
 export class HttpGameApi implements GameApi {
   constructor(
-    private readonly startUrl: string,
+    private readonly newGameUrl: string,
     private readonly stateUrl: string,
   ) {}
 
-  async startGame(): Promise<void> {
-    await fetch(this.startUrl, { method: "POST" });
+  async newGame(): Promise<void> {
+    await fetch(this.newGameUrl, { method: "POST" });
   }
 
   async fetchSnapshot(): Promise<GameSnapshot> {

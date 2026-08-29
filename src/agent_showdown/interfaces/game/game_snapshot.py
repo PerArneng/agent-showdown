@@ -18,4 +18,11 @@ class GameSnapshot(BaseModel):
     max_rounds: int = 0
     round_number: int = 0
     playing: bool = False
+    # No contestants registered, so nothing is being played and nothing will be until
+    # somebody joins. A client that connects while the arena is idle needs to say so.
+    paused: bool = False
     players: tuple[PlayerSnapshot, ...] = ()
+    # Who is in the arena, which is not the same as who is on the board: the roster changes
+    # between matches. Filled from the registry when the snapshot is asked for, so there is one
+    # source of truth and no second copy to keep in step.
+    registered: tuple[str, ...] = ()

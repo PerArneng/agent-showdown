@@ -1,8 +1,11 @@
+import threading
+import time
+from collections.abc import Callable
 from datetime import datetime
 
 from agent_showdown.container import Container
 from agent_showdown.interfaces.config import AppConfig
-from agent_showdown.interfaces.game import Action, ActionKind, Direction, PlayerTurn
+from agent_showdown.interfaces.game import Action, ActionKind, Board, Direction, PlayerTurn
 from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedAgentRoster
 
 _PLANNED = PlayerTurn(
@@ -21,21 +24,48 @@ def _container(console: InMemoryConsole) -> Container:
     container.clock.override(FrozenClock(datetime(2025, 9, 10)))
     container.console.override(console)
     container.randomizer.override(FixedRandomizer([3, 1]))
-    # One short match: the point is the wiring, not a ten-match series.
-    container.config.override(AppConfig(max_games=1, max_rounds=10))
+    # Short matches: the point is the wiring, not a long game.
+    container.config.override(AppConfig(max_rounds=2))
     container.agent_roster.override(_roster())
     return container
 
 
-def test_container_wires_a_working_engine() -> None:
+def _wait_until(condition: Callable[[], bool], seconds: float = 5.0) -> None:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline and not condition():
+        time.sleep(0.01)
+
+
+def test_container_wires_a_working_arena() -> None:
     console = InMemoryConsole()
+    container = _container(console)
+    engine = container.engine()
+    for player in container.agent_roster().create_players():
+        engine.register_player(player)
 
-    _container(console).engine().start_game()
+    thread = threading.Thread(target=engine.run_arena, daemon=True)
+    thread.start()
+    _wait_until(lambda: any("game ended" in line for line in console.lines))
+    engine.stop_arena()
+    thread.join(timeout=5.0)
 
-    assert console.lines[0] == "2025-09-10 \x1b[32mINFO\x1b[0m match 1 of 1 started"
-    assert "2025-09-10 \x1b[32mINFO\x1b[0m player dummy-1 joined at (0,0)" in console.lines
-    assert "2025-09-10 \x1b[32mINFO\x1b[0m game ended after 10 rounds" in console.lines
-    assert console.lines[-1] == "2025-09-10 \x1b[32mINFO\x1b[0m series ended"
+    joined = "2025-09-10 \x1b[32mINFO\x1b[0m player simple-strands-1 joined at (0,0)"
+    assert joined in console.lines
+    assert any("game ended after" in line for line in console.lines)
+
+
+def test_an_arena_nobody_joined_pauses_rather_than_playing() -> None:
+    console = InMemoryConsole()
+    engine = _container(console).engine()
+
+    thread = threading.Thread(target=engine.run_arena, daemon=True)
+    thread.start()
+    _wait_until(lambda: any("arena paused" in line for line in console.lines))
+    engine.stop_arena()
+    thread.join(timeout=5.0)
+
+    assert any("arena paused" in line for line in console.lines)
+    assert not any("game started" in line for line in console.lines)
 
 
 def test_providers_are_singletons() -> None:
@@ -45,10 +75,10 @@ def test_providers_are_singletons() -> None:
     assert container.engine() is container.engine()
     assert container.logger() is container.logger()
     assert container.randomizer() is container.randomizer()
+    # One roster shared by the arena and by everyone joining over HTTP.
+    assert container.player_registry() is container.player_registry()
 
 
 def test_the_game_factory_hands_out_a_fresh_game_each_time() -> None:
-    from agent_showdown.interfaces.game import Board
-
     factory = Container().game_factory()
     assert factory.create(Board(width=2, height=2)) is not factory.create(Board(width=2, height=2))

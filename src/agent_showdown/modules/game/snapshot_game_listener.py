@@ -20,15 +20,43 @@ class SnapshotGameListener:
 
     def __init__(self) -> None:
         self._snapshot = GameSnapshot()
+        # Contestants are registered *before* the match they are playing starts, so the stale
+        # roster has to be dropped when the first of them joins rather than at `game_started` —
+        # by then the new arrivals are already in the list and would be thrown out with the old.
+        self._between_matches = True
 
     def snapshot(self) -> GameSnapshot:
         return self._snapshot
 
+    def arena_paused(self) -> None:
+        # Everything else is left alone: the last match is still the truest picture of the board,
+        # and a client that connects now should see it standing rather than nothing at all.
+        self._snapshot = self._snapshot.model_copy(update={"paused": True, "playing": False})
+
+    def arena_resumed(self) -> None:
+        self._snapshot = self._snapshot.model_copy(update={"paused": False})
+
+    def player_registered(self, player: Player) -> None:
+        """Not kept. `GameSnapshot.registered` is filled from the registry, which owns the roster.
+
+        Keeping a copy here would mean a read-modify-write from whichever HTTP thread happened to
+        register, and two joining at once could lose one. The registry is already lock-guarded.
+        """
+
+    def player_unregistered(self, name: str) -> None:
+        """Not kept, for the same reason as `player_registered`."""
+
     def game_started(self, board: Board, max_rounds: int) -> None:
-        # A new game starts from nothing, so a reload does not inherit the last one's players.
-        self._snapshot = GameSnapshot(board=board, max_rounds=max_rounds)
+        # Keeps whoever just joined: they are this match's contestants, not the last one's.
+        self._snapshot = self._snapshot.model_copy(
+            update={"board": board, "max_rounds": max_rounds, "round_number": 0, "paused": False}
+        )
 
     def player_joined(self, player: Player, position: Position) -> None:
+        if self._between_matches:
+            # The first join of a new match: forget the last one's line-up rather than growing it.
+            self._between_matches = False
+            self._snapshot = self._snapshot.model_copy(update={"players": ()})
         self._snapshot = self._with_player(
             PlayerSnapshot(name=player.get_name(), position=position)
         )
@@ -89,6 +117,7 @@ class SnapshotGameListener:
         """A failed turn changes no position. The stream carries the reason."""
 
     def game_ended(self, rounds_played: int) -> None:
+        self._between_matches = True
         self._snapshot = self._snapshot.model_copy(update={"playing": False})
 
     def _player(self, name: str) -> PlayerSnapshot:

@@ -1,5 +1,7 @@
 from agent_showdown.interfaces.game.action import Action
 from agent_showdown.interfaces.game.action_kind import ActionKind
+from agent_showdown.interfaces.game.arena_paused_event import ArenaPausedEvent
+from agent_showdown.interfaces.game.arena_resumed_event import ArenaResumedEvent
 from agent_showdown.interfaces.game.board import Board
 from agent_showdown.interfaces.game.direction import Direction
 from agent_showdown.interfaces.game.game import Game
@@ -19,12 +21,15 @@ from agent_showdown.interfaces.game.player_hit_event import PlayerHitEvent
 from agent_showdown.interfaces.game.player_joined_event import PlayerJoinedEvent
 from agent_showdown.interfaces.game.player_moved_event import PlayerMovedEvent
 from agent_showdown.interfaces.game.player_reasoned_event import PlayerReasonedEvent
+from agent_showdown.interfaces.game.player_registered_event import PlayerRegisteredEvent
+from agent_showdown.interfaces.game.player_registry import PlayerRegistry
 from agent_showdown.interfaces.game.player_snapshot import PlayerSnapshot
 from agent_showdown.interfaces.game.player_stats import PlayerStats
 from agent_showdown.interfaces.game.player_stats_event import PlayerStatsEvent
 from agent_showdown.interfaces.game.player_turn import PlayerTurn
 from agent_showdown.interfaces.game.player_turn_ended_event import PlayerTurnEndedEvent
 from agent_showdown.interfaces.game.player_turn_started_event import PlayerTurnStartedEvent
+from agent_showdown.interfaces.game.player_unregistered_event import PlayerUnregisteredEvent
 from agent_showdown.interfaces.game.player_updated_event import PlayerUpdatedEvent
 from agent_showdown.interfaces.game.position import Position
 from agent_showdown.interfaces.game.round_started_event import RoundStartedEvent
@@ -40,6 +45,8 @@ from agent_showdown.interfaces.game.turn_failed_event import TurnFailedEvent
 __all__ = [
     "Action",
     "ActionKind",
+    "ArenaPausedEvent",
+    "ArenaResumedEvent",
     "Board",
     "Direction",
     "Game",
@@ -58,6 +65,8 @@ __all__ = [
     "PlayerHitEvent",
     "PlayerJoinedEvent",
     "PlayerMovedEvent",
+    "PlayerRegisteredEvent",
+    "PlayerRegistry",
     "PlayerReasonedEvent",
     "PlayerSnapshot",
     "PlayerStats",
@@ -65,6 +74,7 @@ __all__ = [
     "PlayerTurn",
     "PlayerTurnEndedEvent",
     "PlayerTurnStartedEvent",
+    "PlayerUnregisteredEvent",
     "PlayerUpdatedEvent",
     "Position",
     "RoundStartedEvent",

@@ -23,7 +23,15 @@ export class DefaultStateReducer implements StateReducer {
   ) {}
 
   initial(): ClientState {
-    return { board: null, players: [], status: "Waiting.", playing: false, thinking: null };
+    return {
+      board: null,
+      players: [],
+      status: "Waiting.",
+      playing: false,
+      paused: false,
+      registered: [],
+      thinking: null,
+    };
   }
 
   catchUp(state: ClientState, snapshot: GameSnapshot): ClientState {
@@ -50,11 +58,34 @@ export class DefaultStateReducer implements StateReducer {
     ).players;
     const status =
       state.playing || !snapshot.playing ? state.status : `Round ${snapshot.round_number}.`;
-    return { ...state, board, players, status, thinking: state.thinking };
+    // Gaps only, like everything else here: anything the stream already told us stays.
+    const registered =
+      state.registered.length > 0 ? state.registered : [...snapshot.registered];
+    return { ...state, board, players, status, registered, thinking: state.thinking };
   }
 
   reduce(state: ClientState, event: GameEvent): ClientState {
     switch (event.type) {
+      case "arena_paused":
+        return {
+          ...state,
+          paused: true,
+          playing: false,
+          thinking: null,
+          status: "Waiting for a robot to join.",
+        };
+      case "arena_resumed":
+        return { ...state, paused: false, status: "A robot joined." };
+      case "player_registered":
+        // In the arena, not yet on the board: it is seated when the next match starts.
+        return state.registered.includes(event.player)
+          ? state
+          : { ...state, registered: [...state.registered, event.player] };
+      case "player_unregistered":
+        return {
+          ...state,
+          registered: state.registered.filter((name) => name !== event.player),
+        };
       case "game_started":
         return {
           ...state,

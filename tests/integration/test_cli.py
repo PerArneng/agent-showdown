@@ -1,3 +1,6 @@
+import threading
+import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -12,6 +15,12 @@ from agent_showdown.interfaces.game import Action, ActionKind, Direction, Player
 from tests.fakes import FixedRandomizer, FrozenClock, InMemoryConsole, ScriptedAgentRoster
 
 runner = CliRunner()
+
+
+def _wait_until(condition: Callable[[], bool], seconds: float = 5.0) -> None:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline and not condition():
+        time.sleep(0.01)
 
 
 class RecordingServer:
@@ -73,7 +82,7 @@ def test_start_builds_a_real_app(server: RecordingServer, client_dir: Path) -> N
 
     app, _ = server.calls[0]
     routes = {getattr(route, "path", None) for route in app.routes}
-    assert {"/", "/api/start", "/api/events"} <= routes
+    assert {"/", "/api/new-game", "/api/players", "/api/events"} <= routes
 
 
 def test_the_container_still_plays_a_game() -> None:
@@ -82,7 +91,7 @@ def test_the_container_still_plays_a_game() -> None:
     container.clock.override(FrozenClock(datetime(2025, 9, 10)))
     container.console.override(console)
     container.randomizer.override(FixedRandomizer([3, 1]))
-    container.config.override(AppConfig(max_games=1, max_rounds=10))
+    container.config.override(AppConfig(max_rounds=2))
     # Stands in for the model, so the suite never opens a socket.
     container.agent_roster.override(
         ScriptedAgentRoster(
@@ -94,10 +103,19 @@ def test_the_container_still_plays_a_game() -> None:
             ]
         )
     )
+    engine = container.engine()
+    for player in container.agent_roster().create_players():
+        engine.register_player(player)
 
-    container.engine().start_game()
+    # The arena never returns on its own, so it is driven the way the server drives it.
+    thread = threading.Thread(target=engine.run_arena, daemon=True)
+    thread.start()
+    _wait_until(lambda: any("game ended" in line for line in console.lines))
+    engine.stop_arena()
+    thread.join(timeout=5.0)
 
-    assert console.lines[0] == "2025-09-10 \x1b[32mINFO\x1b[0m match 1 of 1 started"
+    assert "2025-09-10 \x1b[32mINFO\x1b[0m match 1 started" in console.lines
+    assert any("game ended after" in line for line in console.lines)
 
 
 def test_start_refuses_when_the_client_is_not_built(

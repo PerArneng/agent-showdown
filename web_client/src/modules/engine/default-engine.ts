@@ -39,7 +39,7 @@ export class DefaultEngine implements Engine {
   }
 
   connect(): void {
-    this.startButton.onClick(() => this.startGame());
+    this.startButton.onClick(() => this.newGame());
     this.show(this.state);
     this.connectionIndicator.show(false);
     // Subscribe first, so no event can slip past while the snapshot is in flight; the snapshot
@@ -58,12 +58,12 @@ export class DefaultEngine implements Engine {
     this.startButton.setEnabled(!snapshot.playing);
   }
 
-  startGame(): void {
+  newGame(): void {
     this.startButton.setEnabled(false);
     // A new game starts from nothing, so a replay does not inherit the last one's players.
     this.show(this.reducer.initial());
-    this.statusText.show("Starting.");
-    void this.api.startGame();
+    this.statusText.show("Dealing a new game.");
+    void this.api.newGame();
   }
 
   private handle(event: GameEvent): void {

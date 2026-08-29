@@ -8,7 +8,29 @@ from agent_showdown.interfaces.game.position import Position
 
 
 class GameListener(Protocol):
-    """Observes a game. Every event names the player it is about first."""
+    """Observes a game. Every event names the player it is about first.
+
+    The two arena methods are the exception: they are about the loop *around* the games rather
+    than any one game. They live here so `ChannelGameListener` stays the only translator from a
+    callback to an event — a second protocol and a second translator would cost more than the
+    tidiness is worth.
+    """
+
+    def arena_paused(self) -> None:
+        """No contestants are registered, so no match can start."""
+        ...
+
+    def arena_resumed(self) -> None:
+        """Somebody registered, so matches begin again."""
+        ...
+
+    def player_registered(self, player: Player) -> None:
+        """A robot entered the arena. It sits down in the next match, not the one in flight."""
+        ...
+
+    def player_unregistered(self, name: str) -> None:
+        """A robot left the arena. Only its name is left to report it by."""
+        ...
 
     def game_started(self, board: Board, max_rounds: int) -> None:
         """The game is about to run for `max_rounds` rounds."""

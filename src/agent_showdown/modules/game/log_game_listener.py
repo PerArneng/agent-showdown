@@ -8,6 +8,18 @@ class LogGameListener:
     def __init__(self, logger: Logger) -> None:
         self._logger = logger
 
+    def arena_paused(self) -> None:
+        self._logger.info("arena paused: no robots registered")
+
+    def arena_resumed(self) -> None:
+        self._logger.info("arena resumed")
+
+    def player_registered(self, player: Player) -> None:
+        self._logger.info(f"player {player.get_name()} entered the arena")
+
+    def player_unregistered(self, name: str) -> None:
+        self._logger.info(f"player {name} left the arena")
+
     def game_started(self, board: Board, max_rounds: int) -> None:
         self._logger.info(
             f"game started on a {board.width}x{board.height} board for {max_rounds} rounds"

@@ -22,7 +22,7 @@ import {
 import { HttpGameApi, OfflineGameApi } from "./modules/game_api/index.js";
 
 const EVENTS_URL = "/api/events";
-const START_URL = "/api/start";
+const NEW_GAME_URL = "/api/new-game";
 const STATE_URL = "/api/state";
 const DEMO_STEP_MILLISECONDS = 250;
 
@@ -45,7 +45,7 @@ export function createEngine(elements: Elements, demo: boolean): Engine {
   const stream: EventStream = demo
     ? new FixtureEventStream(demoGame as readonly GameEvent[], clock, DEMO_STEP_MILLISECONDS)
     : new SseEventStream(EVENTS_URL);
-  const api: GameApi = demo ? new OfflineGameApi() : new HttpGameApi(START_URL, STATE_URL);
+  const api: GameApi = demo ? new OfflineGameApi() : new HttpGameApi(NEW_GAME_URL, STATE_URL);
 
   return new DefaultEngine(
     stream,

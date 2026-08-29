@@ -28,8 +28,10 @@ class AppConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     agents: tuple[AgentConfig, ...] = _DEFAULT_AGENTS
-    # How many matches a series plays before the board goes quiet.
-    max_games: int = 10
     # Rounds per match, so every robot gets at most this many turns. A match ends sooner once
-    # one robot is left standing.
+    # one robot is left standing. The arena itself never ends: it plays matches until the process
+    # does, pausing only while nobody is registered.
     max_rounds: int = 100
+    # Wandering stand-ins seated at startup. Zero by default, so an arena with no reachable agents
+    # honestly pauses instead of playing a solo dummy. Set to 1 for a lively board with no models.
+    dummies: int = 0

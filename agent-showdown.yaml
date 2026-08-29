@@ -8,10 +8,12 @@
 #
 # max_tokens is the *output* budget, not the context window. With thinking off the answer is
 # under 100 tokens; the budget only matters when thinking is on.
-# How many matches a series plays, and how many rounds each match lasts. A match ends sooner
-# once one robot is left standing.
-max_games: 10
+# Rounds per match; a match ends sooner once one robot is left standing. The arena plays matches
+# back to back forever, pausing only while no robot is registered.
 max_rounds: 100
+
+# Wandering stand-ins seated at startup, for a lively board with no model endpoints up.
+# dummies: 1
 
 agents:
   - name: simple-strands-vllm

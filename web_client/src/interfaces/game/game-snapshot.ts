@@ -21,5 +21,9 @@ export interface GameSnapshot {
   readonly max_rounds: number;
   readonly round_number: number;
   readonly playing: boolean;
+  /** Nobody is registered, so nothing is being played. */
+  readonly paused: boolean;
   readonly players: readonly PlayerSnapshot[];
+  /** Who is in the arena, which is not the same as who is on the board right now. */
+  readonly registered: readonly string[];
 }

@@ -34,12 +34,13 @@ def start(
         ),
     ] = None,
 ) -> None:
-    """Serve the web client. Games are started from the browser."""
+    """Serve the web client. The arena plays on its own; the browser watches and interrupts."""
     container = Container()  # Composition root. The only place the container is instantiated.
     logger = container.logger()
     try:
         # Two steps, because loading the config needs the container's file system.
-        container.config.override(container.config_loader().load(config))
+        loaded = container.config_loader().load(config)
+        container.config.override(loaded)
     except (FileNotFoundError, ValueError) as error:
         logger.error(str(error))
         raise typer.Exit(code=1) from error
@@ -48,11 +49,20 @@ def start(
         logger.error(f"the web client is not built. Run: {BUILD_COMMAND}")
         raise typer.Exit(code=1)
 
+    # Whoever the config names sits down before the arena starts, so a configured run plays
+    # immediately. Everyone else joins over HTTP.
+    engine = container.engine()
+    for player in container.agent_roster().create_players():
+        engine.register_player(player)
+    for number in range(1, loaded.dummies + 1):
+        engine.register_player(container.player_factory().create(f"dummy-{number}"))
+
     server = WebServer()
     web_app = create_app(
-        engine=container.engine(),
+        engine=engine,
         event_channel=container.event_channel(),
         file_system=container.file_system(),
+        agent_player_factory=container.agent_player_factory(),
         client_dir=resolved,
         stopping=server.stopping,
     )

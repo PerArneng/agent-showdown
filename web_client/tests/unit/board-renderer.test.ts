@@ -9,6 +9,8 @@ function state(overrides: Partial<ClientState> = {}): ClientState {
     players: [],
     status: "",
     playing: false,
+    paused: false,
+    registered: [],
     thinking: null,
     ...overrides,
   };

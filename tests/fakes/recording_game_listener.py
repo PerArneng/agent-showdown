@@ -9,6 +9,18 @@ class RecordingGameListener:
     def __init__(self) -> None:
         self.events: list[tuple[str, tuple[Any, ...]]] = []
 
+    def arena_paused(self) -> None:
+        self.events.append(("arena_paused", ()))
+
+    def arena_resumed(self) -> None:
+        self.events.append(("arena_resumed", ()))
+
+    def player_registered(self, player: Player) -> None:
+        self.events.append(("player_registered", (player.get_name(),)))
+
+    def player_unregistered(self, name: str) -> None:
+        self.events.append(("player_unregistered", (name,)))
+
     def game_started(self, board: Board, max_rounds: int) -> None:
         self.events.append(("game_started", (board, max_rounds)))
 

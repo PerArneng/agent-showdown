@@ -1,13 +1,8 @@
 from collections.abc import Sequence
 
+from agent_showdown.interfaces.builtin_agents import AgentPlayerFactory
 from agent_showdown.interfaces.config import AgentConfig
 from agent_showdown.interfaces.game import Player
-from agent_showdown.modules.builtin_agents.simple_strands.simple_strands_player import (
-    SimpleStrandsPlayer,
-)
-from agent_showdown.modules.builtin_agents.simple_strands.strands_turn_planner import (
-    StrandsTurnPlanner,
-)
 
 
 class SimpleStrandsRoster:
@@ -17,11 +12,9 @@ class SimpleStrandsRoster:
     two different OpenAI-compatible servers.
     """
 
-    def __init__(self, configs: Sequence[AgentConfig]) -> None:
+    def __init__(self, configs: Sequence[AgentConfig], factory: AgentPlayerFactory) -> None:
         self._configs = list(configs)
+        self._factory = factory
 
     def create_players(self) -> Sequence[Player]:
-        return [
-            SimpleStrandsPlayer(config.name, StrandsTurnPlanner(config), config.max_actions)
-            for config in self._configs
-        ]
+        return [self._factory.create(config) for config in self._configs]

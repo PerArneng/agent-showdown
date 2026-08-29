@@ -115,7 +115,7 @@ describe("DefaultEngine", () => {
     fixture.startButton.click();
 
     expect(fixture.playerList.names()).toEqual([]);
-    expect(fixture.statusText.last()).toBe("Starting.");
+    expect(fixture.statusText.last()).toBe("Dealing a new game.");
   });
 
   it("shows the empty state before anything has happened", async () => {
@@ -221,6 +221,8 @@ describe("DefaultEngine", () => {
       max_rounds: 10,
       round_number: 4,
       playing: true,
+      paused: false,
+      registered: [],
       players: [
         {
           name: "one",

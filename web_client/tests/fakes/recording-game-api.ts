@@ -6,6 +6,8 @@ const NOTHING_YET: GameSnapshot = {
   max_rounds: 0,
   round_number: 0,
   playing: false,
+  paused: false,
+  registered: [],
   players: [],
 };
 
@@ -16,7 +18,7 @@ export class RecordingGameApi implements GameApi {
 
   constructor(private readonly snapshot: GameSnapshot = NOTHING_YET) {}
 
-  async startGame(): Promise<void> {
+  async newGame(): Promise<void> {
     this.started++;
   }
 

@@ -1,3 +1,6 @@
+from agent_showdown.modules.builtin_agents.simple_strands.simple_strands_agent_factory import (
+    SimpleStrandsAgentFactory,
+)
 from agent_showdown.modules.builtin_agents.simple_strands.simple_strands_player import (
     SimpleStrandsPlayer,
 )
@@ -8,4 +11,9 @@ from agent_showdown.modules.builtin_agents.simple_strands.strands_turn_planner i
     StrandsTurnPlanner,
 )
 
-__all__ = ["SimpleStrandsPlayer", "SimpleStrandsRoster", "StrandsTurnPlanner"]
+__all__ = [
+    "SimpleStrandsAgentFactory",
+    "SimpleStrandsPlayer",
+    "SimpleStrandsRoster",
+    "StrandsTurnPlanner",
+]

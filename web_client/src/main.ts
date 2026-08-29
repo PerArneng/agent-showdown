@@ -29,5 +29,5 @@ const engine = createEngine(elements(), demo);
 engine.connect();
 if (demo) {
   // Nothing to ask a server for: the recording is already playing.
-  engine.startGame();
+  engine.newGame();
 }

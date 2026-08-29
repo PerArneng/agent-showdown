@@ -99,18 +99,19 @@ def test_broken_yaml_names_the_file() -> None:
         _loader({DEFAULT_CONFIG_PATH: "agents: [oops\n"}).load(None)
 
 
-def test_the_series_budgets_default_without_a_file() -> None:
+def test_the_match_budget_defaults_without_a_file() -> None:
     config = _loader().load(None)
 
-    assert (config.max_games, config.max_rounds) == (10, 100)
+    # No dummies by default, so an arena with no reachable agents honestly pauses.
+    assert (config.max_rounds, config.dummies) == (100, 0)
 
 
-def test_the_series_budgets_can_be_set_in_the_file() -> None:
+def test_the_match_budget_can_be_set_in_the_file() -> None:
     path = Path("/etc/agent-showdown.yaml")
-    loader = _loader({path: "max_games: 2\nmax_rounds: 5\n"})
+    loader = _loader({path: "max_rounds: 5\ndummies: 2\n"})
 
     config = loader.load(path)
 
-    assert (config.max_games, config.max_rounds) == (2, 5)
-    # Naming one budget leaves the built-in roster in place.
+    assert (config.max_rounds, config.dummies) == (5, 2)
+    # Naming one setting leaves the built-in roster in place.
     assert len(config.agents) == 2

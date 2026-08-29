@@ -1,5 +1,7 @@
 from agent_showdown.interfaces.event_channel import EventChannel
 from agent_showdown.interfaces.game import (
+    ArenaPausedEvent,
+    ArenaResumedEvent,
     Board,
     Direction,
     GameEndedEvent,
@@ -11,10 +13,12 @@ from agent_showdown.interfaces.game import (
     PlayerJoinedEvent,
     PlayerMovedEvent,
     PlayerReasonedEvent,
+    PlayerRegisteredEvent,
     PlayerStats,
     PlayerStatsEvent,
     PlayerTurnEndedEvent,
     PlayerTurnStartedEvent,
+    PlayerUnregisteredEvent,
     PlayerUpdatedEvent,
     Position,
     RoundStartedEvent,
@@ -28,6 +32,18 @@ class ChannelGameListener:
 
     def __init__(self, channel: EventChannel) -> None:
         self._channel = channel
+
+    def arena_paused(self) -> None:
+        self._channel.publish(ArenaPausedEvent())
+
+    def arena_resumed(self) -> None:
+        self._channel.publish(ArenaResumedEvent())
+
+    def player_registered(self, player: Player) -> None:
+        self._channel.publish(PlayerRegisteredEvent(player=player.get_name()))
+
+    def player_unregistered(self, name: str) -> None:
+        self._channel.publish(PlayerUnregisteredEvent(player=name))
 
     def game_started(self, board: Board, max_rounds: int) -> None:
         self._channel.publish(GameStartedEvent(board=board, max_rounds=max_rounds))

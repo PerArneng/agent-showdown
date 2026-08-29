@@ -97,15 +97,28 @@ def test_rounds_mark_the_game_as_playing_and_the_end_stops_it() -> None:
     assert listener.snapshot().round_number == 3  # the last round still stands
 
 
-def test_a_new_game_does_not_inherit_the_last_ones_players() -> None:
+def test_a_new_match_does_not_inherit_the_last_ones_players() -> None:
     listener = SnapshotGameListener()
-    listener.game_started(_BOARD, max_rounds=7)
     listener.player_joined(_NamedPlayer("a"), Position(x=1, y=2))
+    listener.game_started(_BOARD, max_rounds=7)
+    listener.game_ended(7)
 
+    # The real order: contestants are registered *before* the match they play starts.
+    listener.player_joined(_NamedPlayer("b"), Position(x=0, y=0))
     listener.game_started(Board(width=9, height=9), max_rounds=2)
 
-    assert listener.snapshot().players == ()
-    assert listener.snapshot().board == Board(width=9, height=9)
+    assert [player.name for player in listener.snapshot().players] == ["b"]
+
+
+def test_the_contestants_survive_the_match_starting() -> None:
+    listener = SnapshotGameListener()
+    listener.player_joined(_NamedPlayer("a"), Position(x=1, y=2))
+
+    listener.game_started(_BOARD, max_rounds=7)
+
+    # They joined for *this* match, so starting it must not throw them out.
+    assert [player.name for player in listener.snapshot().players] == ["a"]
+    assert listener.snapshot().board == _BOARD
 
 
 def test_a_blocked_move_and_a_failed_turn_leave_the_snapshot_alone() -> None:

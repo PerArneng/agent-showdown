@@ -132,11 +132,35 @@ player never sees the board — only its own `GameView`, handed to it once per t
 - **`Player` is synchronous and stays that way.** A2A's JSON-RPC `SendMessage` blocks by default, so
   a remote player needs no `async` — nothing forces it onto `Game`, `Engine` or the CLI. The web
   frontend is the only async code, and it keeps the blocking game on a worker thread.
-- **`Engine.start_game` plays a series; `cli start` serves the UI.** Running matches is a use case
-  on the facade; serving is a frontend job. `start_game` refuses to run two series at once — two
-  would interleave their events into one stream of listeners. It plays `max_games` matches back to
-  back, each a fresh `Game`, and `stop_game` ends the series at the next turn boundary. The web
-  frontend calls it from a lifespan shutdown hook, or Ctrl-C waits out the remaining matches.
+- **The arena is always running.** `Engine.run_arena` plays matches back to back for as long as
+  the process lives; the web frontend starts it on a daemon thread from its lifespan *startup*
+  hook, so a match is in progress before any browser connects. It refuses to run twice at once —
+  two would interleave their events into one stream of listeners — and `stop_arena` ends it at the
+  next turn boundary from the shutdown hook, or Ctrl-C waits out a hundred rounds.
+- **Entering the arena and being seated on a board are two different moments**, and both are on
+  the wire. `player_registered` / `player_unregistered` are the roster changing; `player_joined`
+  is a robot taking a seat, which happens once per robot *per match*, just before `game_started`.
+  A robot that registers while the arena is paused is announced immediately and seated when the
+  next match starts.
+- **`GameSnapshot.registered` is filled from the registry, not kept by `SnapshotGameListener`.**
+  A copy in the listener would be a read-modify-write from whichever HTTP thread happened to
+  register, and two robots joining at once could lose one. The registry already holds the lock, so
+  `DefaultEngine.game_snapshot` reads the roster straight from it — one source of truth.
+- **An empty arena pauses rather than playing.** `PlayerRegistry` is what contestants join and
+  leave, and the arena consults it before every match: no players and it emits `arena_paused` once
+  and waits on the registry's condition, which a registration wakes. A robot that joins mid-match
+  sits down for the *next* one — a `Game` fixes its contestants when it starts.
+- **The button is New Game, not Start.** `Engine.new_game` stops the match in flight and the arena
+  deals another immediately. The scoreboard survives it: a button that silently wiped a running
+  tournament would be a trap.
+- Contestants reach the arena two ways and both go through `AgentPlayerFactory`, so the JSON a
+  robot posts to `/api/players` and the entry it would have had in `agent-showdown.yaml` describe
+  it identically. `cli/main.py` registers whoever the config names before the server starts.
+- `arena_paused` and `arena_resumed` are the two `GameListener` methods that are not about a
+  single game. They live there anyway so `ChannelGameListener` stays the only translator from a
+  callback to an event — a second listener protocol and a second translator would cost more than
+  the tidiness is worth. This is the second deliberate exception in this file, beside
+  `AgentClientError`.
 - **Every listener method has a matching frozen event model** in `interfaces/game/`, told apart by a
   `Literal` `type` and collected in the `GameEvent` union. `ChannelGameListener` is the only
   translator between the two. Adding a listener method means adding its event as well, and events
@@ -193,8 +217,9 @@ One sub-package per agent, named after it: `simple_strands/` today.
 ## Configuration
 
 `interfaces/config/` holds `AgentConfig` (name plus one OpenAI-compatible endpoint and its
-budgets) and `AppConfig` (`agents`, plus `max_games` and `max_rounds` for the series).
-`YamlConfigLoader` reads them from `agent-showdown.yaml`.
+budgets) and `AppConfig` (`agents`, plus `max_rounds` per match and `dummies`).
+`YamlConfigLoader` reads them from `agent-showdown.yaml`. `dummies` defaults to **zero**: an arena
+with no reachable agent should honestly pause rather than play a wanderer against itself.
 
 - **The defaults are in the models, so no file is needed.** A missing default path yields
   `AppConfig()` and the run still fields both built-in agents. A path named explicitly with
@@ -229,6 +254,9 @@ Python side finds and serves what that project builds.
   It is read per request, which is why `npm run dev` needs no server restart.
 - **Server-Sent Events, not WebSockets.** Traffic is one-way; `POST /api/start` is the only thing
   the browser sends.
+- **The snapshot drops the last match's line-up on the first `player_joined` of the next one, not
+  on `game_started`.** Contestants are registered *before* the match they play starts, so clearing
+  at `game_started` would throw out the robots that had just sat down.
 - **`GET /api/state` is the stream's missing half.** The event stream has no replay, so a browser
   that connects mid-game — or reloads during one — never hears `game_started` and has no board to
   draw. `SnapshotGameListener` keeps the game as a `GameSnapshot`, the engine hands it out through
