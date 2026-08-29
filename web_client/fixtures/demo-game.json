@@ -28,6 +28,10 @@
     "round_number": 1
   },
   {
+    "type": "player_turn_started",
+    "player": "dummy-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "dummy-1",
     "reasoning": "no plan, wandering UP_RIGHT"
@@ -40,6 +44,24 @@
       "y": 0
     },
     "direction": "UP_RIGHT"
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.08
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 1,
+      "total_seconds": 0.08,
+      "average_seconds": 0.08
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
   },
   {
     "type": "player_reasoned",
@@ -59,8 +81,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 1.85
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 1,
+      "total_seconds": 1.85,
+      "average_seconds": 1.85
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 2
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -80,6 +120,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.05
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 2,
+      "total_seconds": 0.13,
+      "average_seconds": 0.065
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "staying on the diagonal"
@@ -97,8 +155,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 2.15
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 2,
+      "total_seconds": 4.0,
+      "average_seconds": 2.0
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 3
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -118,6 +194,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.12
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 3,
+      "total_seconds": 0.25,
+      "average_seconds": 0.08333333333333333
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "edging west while I have room"
@@ -135,8 +229,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 1.42
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 3,
+      "total_seconds": 5.42,
+      "average_seconds": 1.8066666666666666
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 4
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -156,6 +268,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.09
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 4,
+      "total_seconds": 0.34,
+      "average_seconds": 0.085
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "north again"
@@ -173,8 +303,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 2.65
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 4,
+      "total_seconds": 8.07,
+      "average_seconds": 2.0175
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 5
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -194,6 +342,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.07
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 5,
+      "total_seconds": 0.41,
+      "average_seconds": 0.08199999999999999
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "cutting back down"
@@ -211,8 +377,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 1.95
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 5,
+      "total_seconds": 10.02,
+      "average_seconds": 2.004
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 6
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -232,6 +416,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.11
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 6,
+      "total_seconds": 0.52,
+      "average_seconds": 0.08666666666666667
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "the top-left corner is unclaimed"
@@ -249,8 +451,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 2.3
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 6,
+      "total_seconds": 12.32,
+      "average_seconds": 2.0533333333333332
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 7
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -270,6 +490,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.06
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 7,
+      "total_seconds": 0.58,
+      "average_seconds": 0.08285714285714285
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "staying on the diagonal"
@@ -287,8 +525,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 1.68
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 7,
+      "total_seconds": 14.0,
+      "average_seconds": 2.0
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 8
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -306,6 +562,24 @@
       "x": 4,
       "y": 1
     }
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.08
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 8,
+      "total_seconds": 0.66,
+      "average_seconds": 0.0825
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
   },
   {
     "type": "player_reasoned",
@@ -325,8 +599,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 2.05
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 8,
+      "total_seconds": 16.05,
+      "average_seconds": 2.00625
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 9
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -346,6 +638,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.1
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 9,
+      "total_seconds": 0.76,
+      "average_seconds": 0.08444444444444445
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "north again"
@@ -363,8 +673,26 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 2.4
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 9,
+      "total_seconds": 18.45,
+      "average_seconds": 2.05
+    }
+  },
+  {
     "type": "round_started",
     "round_number": 10
+  },
+  {
+    "type": "player_turn_started",
+    "player": "dummy-1"
   },
   {
     "type": "player_reasoned",
@@ -384,6 +712,24 @@
     }
   },
   {
+    "type": "player_turn_ended",
+    "player": "dummy-1",
+    "seconds": 0.07
+  },
+  {
+    "type": "player_stats",
+    "player": "dummy-1",
+    "stats": {
+      "turns": 10,
+      "total_seconds": 0.83,
+      "average_seconds": 0.08299999999999999
+    }
+  },
+  {
+    "type": "player_turn_started",
+    "player": "simple-strands-1"
+  },
+  {
     "type": "player_reasoned",
     "player": "simple-strands-1",
     "reasoning": "cutting back down"
@@ -398,6 +744,20 @@
     "destination": {
       "x": 1,
       "y": 5
+    }
+  },
+  {
+    "type": "player_turn_ended",
+    "player": "simple-strands-1",
+    "seconds": 1.78
+  },
+  {
+    "type": "player_stats",
+    "player": "simple-strands-1",
+    "stats": {
+      "turns": 10,
+      "total_seconds": 20.23,
+      "average_seconds": 2.023
     }
   },
   {

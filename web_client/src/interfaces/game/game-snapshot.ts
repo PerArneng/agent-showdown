@@ -6,6 +6,7 @@ export interface PlayerSnapshot {
   readonly name: string;
   readonly position: Position;
   readonly reasoning: string;
+  readonly think_seconds: number;
 }
 
 /**

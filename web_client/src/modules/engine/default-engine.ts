@@ -72,7 +72,7 @@ export class DefaultEngine implements Engine {
   private show(state: ClientState): void {
     this.state = state;
     this.renderer.render(state);
-    this.playerList.show(state.players);
+    this.playerList.show(state.players, state.thinking);
     this.statusText.show(state.status);
   }
 }

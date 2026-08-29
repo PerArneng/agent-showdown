@@ -3,6 +3,7 @@ from agent_showdown.interfaces.game import (
     Direction,
     GameListener,
     GameView,
+    PlayerStats,
     PlayerTurn,
     Position,
 )
@@ -135,3 +136,47 @@ def test_it_is_a_game_listener() -> None:
     listener: GameListener = SnapshotGameListener()
 
     assert listener is not None
+
+
+def test_the_think_time_is_kept_so_a_late_client_sees_the_last_turn_cost() -> None:
+    listener = SnapshotGameListener()
+    player = _NamedPlayer("a")
+    listener.player_joined(player, Position(x=1, y=2))
+
+    listener.player_turn_ended(player, 4.25)
+
+    assert listener.snapshot().players[0].think_seconds == 4.25
+    assert listener.snapshot().players[0].position == Position(x=1, y=2)
+
+
+def test_a_started_turn_leaves_the_snapshot_alone() -> None:
+    listener = SnapshotGameListener()
+    player = _NamedPlayer("a")
+    listener.player_joined(player, Position(x=1, y=2))
+    before = listener.snapshot()
+
+    listener.player_turn_started(player)
+
+    assert listener.snapshot() == before
+
+
+def test_a_later_move_keeps_the_think_time() -> None:
+    listener = SnapshotGameListener()
+    player = _NamedPlayer("a")
+    listener.player_joined(player, Position(x=1, y=2))
+    listener.player_turn_ended(player, 4.25)
+
+    listener.player_moved(player, Position(x=1, y=2), Position(x=2, y=2))
+
+    assert listener.snapshot().players[0].think_seconds == 4.25
+
+
+def test_stats_leave_the_snapshot_alone_while_nothing_renders_them() -> None:
+    listener = SnapshotGameListener()
+    player = _NamedPlayer("a")
+    listener.player_joined(player, Position(x=1, y=2))
+    before = listener.snapshot()
+
+    listener.player_stats(player, PlayerStats(turns=2, total_seconds=8.0, average_seconds=4.0))
+
+    assert listener.snapshot() == before

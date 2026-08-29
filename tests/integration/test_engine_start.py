@@ -43,7 +43,7 @@ def _engine(
     )
     return DefaultEngine(
         logger=logger,
-        game_factory=DefaultGameFactory(),
+        game_factory=DefaultGameFactory(FrozenClock(datetime(2025, 9, 10))),
         # RIGHT, then DOWN, over and over.
         player_factory=DummyPlayerFactory(
             randomizer=FixedRandomizer([3, 1]),

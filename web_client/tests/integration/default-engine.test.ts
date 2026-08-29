@@ -133,13 +133,43 @@ describe("DefaultEngine", () => {
     expect(fixture.connectionIndicator.last()).toBe(true);
   });
 
+  it("forwards active thinking state to player list when turns start and end", () => {
+    const stream = new ScriptedEventStream();
+    const fixture = new Fixture(stream);
+    fixture.engine.connect();
+
+    stream.push({ type: "player_joined", player: "alice", position: { x: 0, y: 0 } });
+    stream.push({ type: "player_turn_started", player: "alice" });
+    expect(fixture.playerList.thinking).toBe("alice");
+
+    stream.push({ type: "player_turn_ended", player: "alice", seconds: 1.25 });
+    expect(fixture.playerList.thinking).toBeNull();
+    expect(fixture.playerList.shown[0]?.thinkSeconds).toBe(1.25);
+
+    stream.push({
+      type: "player_stats",
+      player: "alice",
+      stats: { turns: 1, total_seconds: 1.25, average_seconds: 1.25 },
+    });
+    expect(fixture.playerList.shown[0]?.totalThinkSeconds).toBe(1.25);
+    expect(fixture.playerList.shown[0]?.turnsPlayed).toBe(1);
+    expect(fixture.playerList.shown[0]?.averageThinkSeconds).toBe(1.25);
+  });
+
   describe("connecting to a game already in progress", () => {
     const midGame: GameSnapshot = {
       board: { width: 10, height: 10 },
       max_rounds: 10,
       round_number: 4,
       playing: true,
-      players: [{ name: "one", position: { x: 1, y: 2 }, reasoning: "heading for the middle" }],
+      players: [
+        {
+          name: "one",
+          position: { x: 1, y: 2 },
+          reasoning: "heading for the middle",
+          think_seconds: 1.5,
+        },
+      ],
     };
 
     it("draws the board it never heard game_started for", async () => {

@@ -9,6 +9,7 @@ function state(overrides: Partial<ClientState> = {}): ClientState {
     players: [],
     status: "",
     playing: false,
+    thinking: null,
     ...overrides,
   };
 }
@@ -42,7 +43,17 @@ describe("BoardRenderer", () => {
       state({
         board: { width: 10, height: 10 },
         players: [
-          { name: "one", position: { x: 0, y: 0 }, color: "#4c8dff", sprite: 2, reasoning: "" },
+          {
+            name: "one",
+            position: { x: 0, y: 0 },
+            color: "#4c8dff",
+            sprite: 2,
+            reasoning: "",
+            thinkSeconds: 0,
+            totalThinkSeconds: 0,
+            turnsPlayed: 0,
+            averageThinkSeconds: 0,
+          },
         ],
       }),
     );
@@ -65,6 +76,47 @@ describe("BoardRenderer", () => {
     expect(sprite.centre.y).toBeLessThan(shadow.centre.y);
   });
 
+  it("draws active aura and beacon above sprite when player is thinking", () => {
+    const canvas = new RecordingCanvas(400, 400);
+
+    new BoardRenderer(canvas).render(
+      state({
+        board: { width: 10, height: 10 },
+        thinking: "active-agent",
+        players: [
+          {
+            name: "active-agent",
+            position: { x: 2, y: 2 },
+            color: "#4c8dff",
+            sprite: 3,
+            reasoning: "calculating move",
+            thinkSeconds: 0,
+            totalThinkSeconds: 0,
+            turnsPlayed: 0,
+            averageThinkSeconds: 0,
+          },
+        ],
+      }),
+    );
+
+    // 2 ellipses: 1 radiant energy aura + 1 soft ground shadow
+    const ellipses = canvas.ellipses();
+    expect(ellipses).toHaveLength(2);
+    expect(ellipses[0]?.color).toBe("rgba(255, 215, 0, 0.35)");
+
+    // Floating thought beacon circles (outer + inner)
+    const circles = canvas.circles();
+    expect(circles).toHaveLength(2);
+    expect(circles[0]?.color).toBe("#ffd700");
+    expect(circles[1]?.color).toBe("#ffffff");
+
+    // Prominent stroke on the tile
+    const strokePolygons = canvas.strokePolygons();
+    const playerTileStroke = strokePolygons.at(-1);
+    expect(playerTileStroke?.color).toBe("#ffffff");
+    expect(playerTileStroke?.lineWidth).toBe(3);
+  });
+
   it("depth-sorts players so characters in front render on top of characters behind", () => {
     const canvas = new RecordingCanvas(400, 400);
 
@@ -73,8 +125,28 @@ describe("BoardRenderer", () => {
       state({
         board: { width: 10, height: 10 },
         players: [
-          { name: "front", position: { x: 5, y: 5 }, color: "#ff5d7a", sprite: 1, reasoning: "" },
-          { name: "back", position: { x: 0, y: 0 }, color: "#4c8dff", sprite: 0, reasoning: "" },
+          {
+            name: "front",
+            position: { x: 5, y: 5 },
+            color: "#ff5d7a",
+            sprite: 1,
+            reasoning: "",
+            thinkSeconds: 0,
+            totalThinkSeconds: 0,
+            turnsPlayed: 0,
+            averageThinkSeconds: 0,
+          },
+          {
+            name: "back",
+            position: { x: 0, y: 0 },
+            color: "#4c8dff",
+            sprite: 0,
+            reasoning: "",
+            thinkSeconds: 0,
+            totalThinkSeconds: 0,
+            turnsPlayed: 0,
+            averageThinkSeconds: 0,
+          },
         ],
       }),
     );

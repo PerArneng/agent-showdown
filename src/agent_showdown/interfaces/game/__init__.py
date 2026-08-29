@@ -17,7 +17,11 @@ from agent_showdown.interfaces.game.player_joined_event import PlayerJoinedEvent
 from agent_showdown.interfaces.game.player_moved_event import PlayerMovedEvent
 from agent_showdown.interfaces.game.player_reasoned_event import PlayerReasonedEvent
 from agent_showdown.interfaces.game.player_snapshot import PlayerSnapshot
+from agent_showdown.interfaces.game.player_stats import PlayerStats
+from agent_showdown.interfaces.game.player_stats_event import PlayerStatsEvent
 from agent_showdown.interfaces.game.player_turn import PlayerTurn
+from agent_showdown.interfaces.game.player_turn_ended_event import PlayerTurnEndedEvent
+from agent_showdown.interfaces.game.player_turn_started_event import PlayerTurnStartedEvent
 from agent_showdown.interfaces.game.position import Position
 from agent_showdown.interfaces.game.round_started_event import RoundStartedEvent
 from agent_showdown.interfaces.game.snapshot_source import SnapshotSource
@@ -43,7 +47,11 @@ __all__ = [
     "PlayerMovedEvent",
     "PlayerReasonedEvent",
     "PlayerSnapshot",
+    "PlayerStats",
+    "PlayerStatsEvent",
     "PlayerTurn",
+    "PlayerTurnEndedEvent",
+    "PlayerTurnStartedEvent",
     "Position",
     "RoundStartedEvent",
     "SnapshotSource",

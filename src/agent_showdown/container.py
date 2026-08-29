@@ -37,7 +37,7 @@ class Container(containers.DeclarativeContainer):
         formatter=log_formatter,
         console=console,
     )
-    game_factory = providers.Singleton(DefaultGameFactory)
+    game_factory = providers.Singleton(DefaultGameFactory, clock=clock)
     player_factory = providers.Singleton(
         DummyPlayerFactory,
         randomizer=randomizer,

@@ -11,10 +11,16 @@ function after(state: ClientState, ...events: Parameters<typeof reducer.reduce>[
 
 describe("DefaultStateReducer", () => {
   it("starts with nothing on the board", () => {
-    expect(empty).toEqual({ board: null, players: [], status: "Waiting.", playing: false });
+    expect(empty).toEqual({
+      board: null,
+      players: [],
+      status: "Waiting.",
+      playing: false,
+      thinking: null,
+    });
   });
 
-  it("takes the board from game_started", () => {
+  it("takes the board from game_started and clears thinking", () => {
     const state = after(empty, {
       type: "game_started",
       board: { width: 10, height: 10 },
@@ -23,6 +29,7 @@ describe("DefaultStateReducer", () => {
 
     expect(state.board).toEqual({ width: 10, height: 10 });
     expect(state.status).toBe("Playing 10 rounds.");
+    expect(state.thinking).toBeNull();
   });
 
   it("gives each player its own color and sprite, by join order and name", () => {
@@ -100,6 +107,75 @@ describe("DefaultStateReducer", () => {
     expect(state.players[0]?.reasoning).toBe("just arrived");
   });
 
+  it("sets thinking when a player turn starts", () => {
+    const joined = after(empty, {
+      type: "player_joined",
+      player: "one",
+      position: { x: 0, y: 0 },
+    });
+
+    const state = after(joined, { type: "player_turn_started", player: "one" });
+
+    expect(state.thinking).toBe("one");
+  });
+
+  it("adopts a player whose turn starts before it is seen anywhere", () => {
+    const state = after(empty, { type: "player_turn_started", player: "late" });
+
+    expect(state.thinking).toBe("late");
+    expect(state.players).toHaveLength(1);
+    expect(state.players[0]?.name).toBe("late");
+  });
+
+  it("records the seconds a finished turn took against the player and clears thinking", () => {
+    const joined = after(
+      empty,
+      { type: "player_joined", player: "one", position: { x: 0, y: 0 } },
+      { type: "player_joined", player: "two", position: { x: 9, y: 9 } },
+      { type: "player_turn_started", player: "one" },
+    );
+
+    expect(joined.thinking).toBe("one");
+
+    const state = after(joined, { type: "player_turn_ended", player: "one", seconds: 12.5 });
+
+    expect(state.thinking).toBeNull();
+    expect(state.players[0]?.thinkSeconds).toBe(12.5);
+    expect(state.players[1]?.thinkSeconds).toBe(0);
+  });
+
+  it("updates player running totals and average from player_stats protocol event", () => {
+    const joined = after(empty, {
+      type: "player_joined",
+      player: "one",
+      position: { x: 0, y: 0 },
+    });
+
+    const state = after(joined, {
+      type: "player_stats",
+      player: "one",
+      stats: { turns: 3, total_seconds: 12.5, average_seconds: 4.1666666 },
+    });
+
+    expect(state.players[0]?.turnsPlayed).toBe(3);
+    expect(state.players[0]?.totalThinkSeconds).toBe(12.5);
+    expect(state.players[0]?.averageThinkSeconds).toBe(4.1666666);
+  });
+
+  it("adopts a player whose stats arrive before it is seen anywhere", () => {
+    const state = after(empty, {
+      type: "player_stats",
+      player: "late",
+      stats: { turns: 2, total_seconds: 6.0, average_seconds: 3.0 },
+    });
+
+    expect(state.players).toHaveLength(1);
+    expect(state.players[0]?.name).toBe("late");
+    expect(state.players[0]?.turnsPlayed).toBe(2);
+    expect(state.players[0]?.totalThinkSeconds).toBe(6.0);
+    expect(state.players[0]?.averageThinkSeconds).toBe(3.0);
+  });
+
   it("leaves everything alone when a move is blocked", () => {
     const joined = after(empty, {
       type: "player_joined",
@@ -127,12 +203,18 @@ describe("DefaultStateReducer", () => {
     expect(state.status).toBe("one failed its turn: TimeoutError: too slow");
   });
 
-  it("tracks whether a game is in flight", () => {
-    const playing = after(empty, { type: "round_started", round_number: 1 });
+  it("tracks whether a game is in flight and clears thinking when ended", () => {
+    const playing = after(
+      empty,
+      { type: "round_started", round_number: 1 },
+      { type: "player_turn_started", player: "one" },
+    );
     expect(playing.playing).toBe(true);
+    expect(playing.thinking).toBe("one");
 
     const ended = after(playing, { type: "game_ended", rounds_played: 10 });
     expect(ended.playing).toBe(false);
+    expect(ended.thinking).toBeNull();
     expect(ended.status).toBe("Game over after 10 rounds.");
   });
 
@@ -161,10 +243,21 @@ describe("DefaultStateReducer", () => {
       round_number: 4,
       playing: true,
       players: [
-        { name: "one", position: { x: 1, y: 2 }, reasoning: "heading for the middle" },
-        { name: "two", position: { x: 9, y: 9 }, reasoning: "" },
+        {
+          name: "one",
+          position: { x: 1, y: 2 },
+          reasoning: "heading for the middle",
+          think_seconds: 1.5,
+        },
+        { name: "two", position: { x: 9, y: 9 }, reasoning: "", think_seconds: 0 },
       ],
     };
+
+    it("carries the think time a late client never heard", () => {
+      const state = reducer.catchUp(empty, midGame);
+
+      expect(state.players[0]?.thinkSeconds).toBe(1.5);
+    });
 
     it("gives a late client the board it never heard about", () => {
       const state = reducer.catchUp(empty, midGame);

@@ -8,6 +8,10 @@ export type {
   PlayerJoinedEvent,
   PlayerMovedEvent,
   PlayerReasonedEvent,
+  PlayerStats,
+  PlayerStatsEvent,
+  PlayerTurnEndedEvent,
+  PlayerTurnStartedEvent,
   RoundStartedEvent,
   TurnFailedEvent,
 } from "./game-event.js";

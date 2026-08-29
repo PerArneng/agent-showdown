@@ -1,6 +1,6 @@
 from typing import Any
 
-from agent_showdown.interfaces.game import Board, Direction, Player, Position
+from agent_showdown.interfaces.game import Board, Direction, Player, PlayerStats, Position
 
 
 class RecordingGameListener:
@@ -17,6 +17,15 @@ class RecordingGameListener:
 
     def round_started(self, round_number: int) -> None:
         self.events.append(("round_started", (round_number,)))
+
+    def player_turn_started(self, player: Player) -> None:
+        self.events.append(("player_turn_started", (player.get_name(),)))
+
+    def player_turn_ended(self, player: Player, seconds: float) -> None:
+        self.events.append(("player_turn_ended", (player.get_name(), seconds)))
+
+    def player_stats(self, player: Player, stats: PlayerStats) -> None:
+        self.events.append(("player_stats", (player.get_name(), stats)))
 
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self.events.append(("player_moved", (player.get_name(), source, destination)))

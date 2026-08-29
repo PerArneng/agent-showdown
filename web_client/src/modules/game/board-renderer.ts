@@ -148,12 +148,27 @@ export class BoardRenderer implements Renderer {
     );
 
     for (const player of sortedPlayers) {
+      const isThinking = state.thinking === player.name;
       const corners = proj.tileCorners(player.position.x, player.position.y);
       const centre = proj.tileCentre(player.position.x, player.position.y);
 
-      // Player-colored tile highlight
-      this.canvas.fillPolygon(corners, `${player.color}35`);
-      this.canvas.strokePolygon(corners, `${player.color}dd`, 2);
+      // Player-colored tile highlight (brighter and prominent border when thinking)
+      const fillColor = isThinking ? `${player.color}66` : `${player.color}35`;
+      const strokeColor = isThinking ? "#ffffff" : `${player.color}dd`;
+      const strokeWidth = isThinking ? 3 : 2;
+
+      this.canvas.fillPolygon(corners, fillColor);
+      this.canvas.strokePolygon(corners, strokeColor, strokeWidth);
+
+      // Radiant energy aura on the ground when player is actively thinking
+      if (isThinking) {
+        this.canvas.fillEllipse(
+          centre,
+          proj.tileWidthHalf * 0.75,
+          proj.tileHeightHalf * 0.75,
+          "rgba(255, 215, 0, 0.35)",
+        );
+      }
 
       // Soft ground shadow on the square
       this.canvas.fillEllipse(
@@ -169,6 +184,16 @@ export class BoardRenderer implements Renderer {
         y: centre.y - proj.spriteSize * SPRITE_VERTICAL_ANCHOR_RATIO,
       };
       this.canvas.drawSprite(player.sprite, spriteCentre, proj.spriteSize);
+
+      // Floating thought beacon above active player's head
+      if (isThinking) {
+        const beaconCentre: Position = {
+          x: spriteCentre.x,
+          y: spriteCentre.y - proj.spriteSize * 0.52,
+        };
+        this.canvas.fillCircle(beaconCentre, Math.max(3, proj.spriteSize * 0.1), "#ffd700");
+        this.canvas.fillCircle(beaconCentre, Math.max(1.5, proj.spriteSize * 0.05), "#ffffff");
+      }
     }
   }
 }

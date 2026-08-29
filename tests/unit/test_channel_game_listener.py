@@ -8,7 +8,11 @@ from agent_showdown.interfaces.game import (
     PlayerJoinedEvent,
     PlayerMovedEvent,
     PlayerReasonedEvent,
+    PlayerStats,
+    PlayerStatsEvent,
     PlayerTurn,
+    PlayerTurnEndedEvent,
+    PlayerTurnStartedEvent,
     Position,
     RoundStartedEvent,
     TurnFailedEvent,
@@ -104,3 +108,28 @@ def test_game_ended() -> None:
     ChannelGameListener(channel).game_ended(10)
 
     assert channel.published == [GameEndedEvent(rounds_played=10)]
+
+
+def test_player_turn_started_names_the_player() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_turn_started(NamedPlayer("bob"))
+
+    assert channel.published == [PlayerTurnStartedEvent(player="bob")]
+
+
+def test_player_turn_ended_carries_the_seconds() -> None:
+    channel = InMemoryEventChannel()
+
+    ChannelGameListener(channel).player_turn_ended(NamedPlayer("bob"), 12.5)
+
+    assert channel.published == [PlayerTurnEndedEvent(player="bob", seconds=12.5)]
+
+
+def test_player_stats_carries_the_running_totals() -> None:
+    channel = InMemoryEventChannel()
+    stats = PlayerStats(turns=3, total_seconds=12.0, average_seconds=4.0)
+
+    ChannelGameListener(channel).player_stats(NamedPlayer("bob"), stats)
+
+    assert channel.published == [PlayerStatsEvent(player="bob", stats=stats)]

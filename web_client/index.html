@@ -7,20 +7,36 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <aside>
-      <div class="title-container">
-        <img src="/src/assets/title-magic-robots.png" alt="MAGIC ROBOTS" class="title-logo" />
-        <h1 class="sr-only">Magic Robots</h1>
-      </div>
-      <button id="start">Start game</button>
-      <h2>Players</h2>
-      <ul id="players"></ul>
-      <div id="status">Waiting.</div>
-    </aside>
-    <main><canvas id="board" width="600" height="600"></canvas></main>
-    <div id="connection" class="connection-status disconnected">
-      <span class="connection-icon" aria-hidden="true"></span>
-      <span class="connection-label">Disconnected</span>
+    <div class="app-layout">
+      <header class="app-header">
+        <div class="title-container">
+          <img src="/src/assets/title-magic-robots.png" alt="MAGIC ROBOTS" class="title-logo" />
+          <h1 class="sr-only">Magic Robots</h1>
+        </div>
+        <div class="header-center">
+          <div id="status" class="status-pill">Waiting.</div>
+        </div>
+        <div class="header-actions">
+          <button id="start">Start game</button>
+          <div id="connection" class="connection-status disconnected">
+            <span class="connection-icon" aria-hidden="true"></span>
+            <span class="connection-label">Disconnected</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="board-section">
+          <canvas id="board" width="600" height="520"></canvas>
+        </section>
+
+        <section class="roster-section">
+          <div class="section-title-bar">
+            <h2>Contestants & Turn Performance</h2>
+          </div>
+          <div id="players" class="players-container"></div>
+        </section>
+      </main>
     </div>
   </body>
 </html>

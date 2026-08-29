@@ -22,6 +22,30 @@ export interface RoundStartedEvent {
   readonly round_number: number;
 }
 
+export interface PlayerTurnStartedEvent {
+  readonly type: "player_turn_started";
+  readonly player: string;
+}
+
+export interface PlayerTurnEndedEvent {
+  readonly type: "player_turn_ended";
+  readonly player: string;
+  readonly seconds: number;
+}
+
+/** Snake_case throughout: this is wire data, mirroring `interfaces/game/player_stats.py`. */
+export interface PlayerStats {
+  readonly turns: number;
+  readonly total_seconds: number;
+  readonly average_seconds: number;
+}
+
+export interface PlayerStatsEvent {
+  readonly type: "player_stats";
+  readonly player: string;
+  readonly stats: PlayerStats;
+}
+
 export interface PlayerMovedEvent {
   readonly type: "player_moved";
   readonly player: string;
@@ -57,6 +81,9 @@ export type GameEvent =
   | GameStartedEvent
   | PlayerJoinedEvent
   | RoundStartedEvent
+  | PlayerTurnStartedEvent
+  | PlayerTurnEndedEvent
+  | PlayerStatsEvent
   | PlayerMovedEvent
   | PlayerReasonedEvent
   | MoveBlockedEvent

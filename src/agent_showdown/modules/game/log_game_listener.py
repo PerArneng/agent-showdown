@@ -1,4 +1,4 @@
-from agent_showdown.interfaces.game import Board, Direction, Player, Position
+from agent_showdown.interfaces.game import Board, Direction, Player, PlayerStats, Position
 from agent_showdown.interfaces.log import Logger
 
 
@@ -18,6 +18,18 @@ class LogGameListener:
 
     def round_started(self, round_number: int) -> None:
         self._logger.info(f"round {round_number} started")
+
+    def player_turn_started(self, player: Player) -> None:
+        self._logger.info(f"player {player.get_name()} started its turn")
+
+    def player_turn_ended(self, player: Player, seconds: float) -> None:
+        self._logger.info(f"player {player.get_name()} ended its turn after {seconds:.1f}s")
+
+    def player_stats(self, player: Player, stats: PlayerStats) -> None:
+        self._logger.info(
+            f"player {player.get_name()} has taken {stats.turns} turns"
+            f" in {stats.total_seconds:.1f}s, {stats.average_seconds:.1f}s each"
+        )
 
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self._logger.info(

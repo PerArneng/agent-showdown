@@ -9,6 +9,10 @@ from agent_showdown.interfaces.game import (
     PlayerJoinedEvent,
     PlayerMovedEvent,
     PlayerReasonedEvent,
+    PlayerStats,
+    PlayerStatsEvent,
+    PlayerTurnEndedEvent,
+    PlayerTurnStartedEvent,
     Position,
     RoundStartedEvent,
     TurnFailedEvent,
@@ -31,6 +35,15 @@ class ChannelGameListener:
 
     def round_started(self, round_number: int) -> None:
         self._channel.publish(RoundStartedEvent(round_number=round_number))
+
+    def player_turn_started(self, player: Player) -> None:
+        self._channel.publish(PlayerTurnStartedEvent(player=player.get_name()))
+
+    def player_turn_ended(self, player: Player, seconds: float) -> None:
+        self._channel.publish(PlayerTurnEndedEvent(player=player.get_name(), seconds=seconds))
+
+    def player_stats(self, player: Player, stats: PlayerStats) -> None:
+        self._channel.publish(PlayerStatsEvent(player=player.get_name(), stats=stats))
 
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self._channel.publish(

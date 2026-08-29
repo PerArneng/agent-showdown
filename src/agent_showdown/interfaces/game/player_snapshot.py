@@ -11,3 +11,4 @@ class PlayerSnapshot(BaseModel):
     name: str
     position: Position
     reasoning: str = ""
+    think_seconds: float = 0.0

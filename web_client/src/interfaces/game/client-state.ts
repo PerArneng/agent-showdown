@@ -7,4 +7,6 @@ export interface ClientState {
   readonly players: readonly PlayerState[];
   readonly status: string;
   readonly playing: boolean;
+  /** The name of the player currently executing its turn, or null when idle. */
+  readonly thinking: string | null;
 }

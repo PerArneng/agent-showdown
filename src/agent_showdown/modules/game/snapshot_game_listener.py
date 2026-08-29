@@ -4,6 +4,7 @@ from agent_showdown.interfaces.game import (
     GameSnapshot,
     Player,
     PlayerSnapshot,
+    PlayerStats,
     Position,
 )
 
@@ -36,6 +37,17 @@ class SnapshotGameListener:
         self._snapshot = self._snapshot.model_copy(
             update={"round_number": round_number, "playing": True}
         )
+
+    def player_turn_started(self, player: Player) -> None:
+        """Thinking changes nothing yet. The time it takes lands when the turn ends."""
+
+    def player_turn_ended(self, player: Player, seconds: float) -> None:
+        self._snapshot = self._with_player(
+            self._player(player.get_name()).model_copy(update={"think_seconds": seconds})
+        )
+
+    def player_stats(self, player: Player, stats: PlayerStats) -> None:
+        """Not kept: the stream carries the totals and nothing renders them yet."""
 
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:
         self._snapshot = self._with_player(

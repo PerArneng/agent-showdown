@@ -3,6 +3,7 @@ from typing import Protocol
 from agent_showdown.interfaces.game.board import Board
 from agent_showdown.interfaces.game.direction import Direction
 from agent_showdown.interfaces.game.player import Player
+from agent_showdown.interfaces.game.player_stats import PlayerStats
 from agent_showdown.interfaces.game.position import Position
 
 
@@ -19,6 +20,18 @@ class GameListener(Protocol):
 
     def round_started(self, round_number: int) -> None:
         """A new round begins. Rounds are numbered from 1."""
+        ...
+
+    def player_turn_started(self, player: Player) -> None:
+        """A player was handed its view and is now thinking."""
+        ...
+
+    def player_turn_ended(self, player: Player, seconds: float) -> None:
+        """A player's turn is over, after `seconds`, whether it planned or failed."""
+        ...
+
+    def player_stats(self, player: Player, stats: PlayerStats) -> None:
+        """A player's running totals, right after one of its turns ended."""
         ...
 
     def player_moved(self, player: Player, source: Position, destination: Position) -> None:

@@ -1,14 +1,17 @@
+from datetime import datetime
+
 from agent_showdown.interfaces.game import (
     Board,
     Direction,
     GameView,
     Move,
     Movement,
+    PlayerStats,
     PlayerTurn,
     Position,
 )
 from agent_showdown.modules.game import DefaultGame
-from tests.fakes import RecordingGameListener
+from tests.fakes import FrozenClock, RecordingGameListener, ScriptedClock
 
 
 class ScriptedPlayer:
@@ -31,7 +34,9 @@ class ScriptedPlayer:
 
 
 def _game() -> DefaultGame:
-    return DefaultGame(Board(width=3, height=3))
+    # A frozen clock makes every turn take zero seconds, which keeps the durations out of the way
+    # of the tests that are about something else. `ScriptedClock` is for the ones that are not.
+    return DefaultGame(Board(width=3, height=3), FrozenClock(datetime(2025, 9, 10)))
 
 
 def test_register_player_emits_player_joined_with_the_start_position() -> None:
@@ -121,8 +126,11 @@ def test_a_move_off_the_board_is_blocked_and_leaves_the_position_untouched() -> 
     assert listener.events[1:] == [
         ("game_started", (Board(width=3, height=3), 1)),
         ("round_started", (1,)),
+        ("player_turn_started", ("a",)),
         ("move_blocked", ("a", Position(x=0, y=0), Direction.LEFT)),
         ("player_moved", ("a", Position(x=0, y=0), Position(x=1, y=0))),
+        ("player_turn_ended", ("a", 0.0)),
+        ("player_stats", ("a", PlayerStats(turns=1, total_seconds=0.0, average_seconds=0.0))),
         ("game_ended", (1,)),
     ]
 
@@ -223,8 +231,8 @@ def test_a_turn_with_reasoning_reports_it_before_the_moves() -> None:
 
     game.start(max_rounds=1)
 
-    assert listener.events[3] == ("player_reasoned", ("a", "north looks open"))
-    assert listener.names()[4] == "player_moved"
+    assert listener.events[4] == ("player_reasoned", ("a", "north looks open"))
+    assert listener.names()[5] == "player_moved"
 
 
 def test_a_turn_without_reasoning_reports_nothing() -> None:
@@ -245,4 +253,139 @@ def test_an_over_long_plan_still_reports_the_reasoning_behind_it() -> None:
 
     game.start(max_rounds=1)
 
-    assert listener.names()[3:5] == ["player_reasoned", "turn_failed"]
+    assert listener.names()[4:6] == ["player_reasoned", "turn_failed"]
+
+
+def test_a_turn_is_bracketed_by_a_started_and_an_ended_event() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a", Direction.UP), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert listener.names() == [
+        "player_joined",
+        "game_started",
+        "round_started",
+        "player_turn_started",
+        "player_moved",
+        "player_turn_ended",
+        "player_stats",
+        "game_ended",
+    ]
+
+
+def test_the_ended_event_carries_the_seconds_the_turn_took() -> None:
+    clock = ScriptedClock(datetime(2025, 9, 10, 12, 0, 0), datetime(2025, 9, 10, 12, 0, 3))
+    game, listener = DefaultGame(Board(width=3, height=3), clock), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("slow", Direction.UP), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert ("player_turn_ended", ("slow", 3.0)) in listener.events
+
+
+def test_a_turn_that_raises_still_reports_that_it_ended() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ExplodingPlayer("boom"), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert listener.names()[3:6] == ["player_turn_started", "turn_failed", "player_turn_ended"]
+
+
+def test_an_over_long_plan_still_reports_that_the_turn_ended() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("greedy", *([Direction.RIGHT] * 9)), Position(x=0, y=0))
+
+    game.start(max_rounds=1)
+
+    assert listener.names()[-3:-1] == ["player_turn_ended", "player_stats"]
+
+
+def test_every_started_turn_is_matched_by_exactly_one_ended_turn() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ExplodingPlayer("boom"), Position(x=1, y=1))
+    game.register_player(ScriptedPlayer("ok", Direction.RIGHT), Position(x=0, y=0))
+
+    game.start(max_rounds=3)
+
+    assert listener.names().count("player_turn_started") == 6
+    assert listener.names().count("player_turn_ended") == 6
+
+
+def _stats(listener: RecordingGameListener, name: str) -> list[PlayerStats]:
+    return [
+        args[1]
+        for event, args in listener.events
+        if event == "player_stats" and args[0] == name
+    ]
+
+
+def test_the_stats_follow_the_turn_they_summarise() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a", Direction.UP), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert listener.names()[-3:-1] == ["player_turn_ended", "player_stats"]
+
+
+def test_the_totals_accumulate_across_rounds_and_average_the_turns() -> None:
+    # Three turns of 2, 4 and 6 seconds: an average of 4 over a total of 12.
+    clock = ScriptedClock(
+        datetime(2025, 9, 10, 12, 0, 0), datetime(2025, 9, 10, 12, 0, 2),
+        datetime(2025, 9, 10, 12, 0, 2), datetime(2025, 9, 10, 12, 0, 6),
+        datetime(2025, 9, 10, 12, 0, 6), datetime(2025, 9, 10, 12, 0, 12),
+    )
+    game, listener = DefaultGame(Board(width=3, height=3), clock), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a"), Position(x=1, y=1))
+
+    game.start(max_rounds=3)
+
+    assert _stats(listener, "a") == [
+        PlayerStats(turns=1, total_seconds=2.0, average_seconds=2.0),
+        PlayerStats(turns=2, total_seconds=6.0, average_seconds=3.0),
+        PlayerStats(turns=3, total_seconds=12.0, average_seconds=4.0),
+    ]
+
+
+def test_a_failed_turn_still_counts_toward_the_totals() -> None:
+    clock = ScriptedClock(datetime(2025, 9, 10, 12, 0, 0), datetime(2025, 9, 10, 12, 0, 5))
+    game, listener = DefaultGame(Board(width=3, height=3), clock), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ExplodingPlayer("boom"), Position(x=1, y=1))
+
+    game.start(max_rounds=1)
+
+    assert _stats(listener, "boom") == [
+        PlayerStats(turns=1, total_seconds=5.0, average_seconds=5.0)
+    ]
+
+
+def test_each_player_accumulates_its_own_totals() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a"), Position(x=0, y=0))
+    game.register_player(ScriptedPlayer("b"), Position(x=2, y=2))
+
+    game.start(max_rounds=2)
+
+    assert [stats.turns for stats in _stats(listener, "a")] == [1, 2]
+    assert [stats.turns for stats in _stats(listener, "b")] == [1, 2]
+
+
+def test_the_turn_count_matches_the_rounds_played() -> None:
+    game, listener = _game(), RecordingGameListener()
+    game.add_listener(listener)
+    game.register_player(ScriptedPlayer("a", Direction.UP), Position(x=1, y=1))
+
+    game.start(max_rounds=4)
+
+    assert _stats(listener, "a")[-1].turns == 4
