@@ -1,0 +1,33 @@
+/* Where geometry stops and rules begin. Rendered to ../img/spell-model.svg */
+digraph spell_model {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  book [label="SpellBook\ncreate_spells() -> tuple[Spell, ...]\ncalled once per robot, per match", fillcolor="#f7e3c0"];
+
+  subgraph cluster_pure {
+    label="  PURE — knows squares, never players  "; style="rounded,dashed"; color="#888888"; fontsize=10;
+    spell  [label="Spell\ndescribe() -> SpellInfo\ncast(origin, direction, board, occupied)\l  -> SpellEffect\l", fillcolor="#e6e6e6"];
+    info   [label="SpellInfo\nname, description, damage, range\nwhat the robot is TOLD it carries", fillcolor="#e6e6e6"];
+    effect [label="SpellEffect\npath: tuple[Position, ...]\nimpact: Position | None\ndamage: int", fillcolor="#e6e6e6"];
+    spell -> info   [label="  describes itself"];
+    spell -> effect [label="  returns"];
+  }
+
+  game [label="Game\nowns the rules", fillcolor="#d8ecd8"];
+  who  [label="who is standing on `impact`?\nliving robots only", shape=diamond, fillcolor="#cfe3f7"];
+  dmg  [label="health = max(0, health - damage)\nrecord_death / record_elimination", fillcolor="#f6cfcf"];
+
+  book -> spell [label="  hands each robot\l  its own instances\l"];
+  game -> spell [label="  cast(…) with the occupied squares"];
+  effect -> game [label="  path + impact"];
+  game -> who;
+  who  -> dmg [label="  the game resolves it"];
+
+  note [shape=note, fillcolor="#cfe3f7", fontsize=9,
+        label="A Spell takes no Player and returns no damage\nto anybody — only geometry. That is what lets\nFireBallSpell be unit-tested with no game at all,\nand keeps damage a rule of the game rather than\na property of the spell."];
+  spell -> note [style=dashed, arrowhead=none];
+}

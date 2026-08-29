@@ -1,0 +1,32 @@
+/* The concepts and how they connect. Rendered to ../img/domain-overview.svg */
+digraph domain_overview {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  arena    [label="ARENA\nno class of its own —\nthe loop inside DefaultEngine", fillcolor="#f7e3c0", style="filled,dashed", color="#888888"];
+  registry [label="PlayerRegistry\nwho is in the arena", fillcolor="#f7e3c0"];
+  score    [label="Scoreboard\nrunning totals\nthe only mutable thing", fillcolor="#f7e3c0"];
+  game     [label="Game\none match", fillcolor="#d8ecd8"];
+  board    [label="Board\nthe grid", fillcolor="#e6e6e6"];
+  player   [label="Player\na contestant\n(may be remote)", fillcolor="#cfe3f7"];
+  spell    [label="Spell\npure geometry", fillcolor="#e6e6e6"];
+  listener [label="GameListener\nobserves everything", fillcolor="#d8ecd8"];
+
+  arena    -> registry [label="  asks before each match"];
+  arena    -> game     [label="  creates one per match"];
+  arena    -> score    [label="  owns, hands to every match"];
+  registry -> player   [label="  holds 0..n"];
+  game     -> player   [label="  seats 1..n\l  keyed by OBJECT, not name\l"];
+  game     -> board    [label="  plays on one"];
+  game     -> spell    [label="  gives each robot its own\l  via SpellBook\l"];
+  game     -> score    [label="  records turns, kills,\l  deaths, wins\l"];
+  game     -> listener [label="  emits to 0..n"];
+  player   -> game     [label="  answers with PlayerTurn", style=dashed];
+
+  note [shape=note, fillcolor="#e6e6e6", fontsize=9,
+        label="Solid = owns or creates.\nDashed = answers back.\n\nThe Arena is a concept, not a type:\nlook for the loop in DefaultEngine._arena,\nnot for a class called Arena."];
+  arena -> note [style=dashed, arrowhead=none];
+}

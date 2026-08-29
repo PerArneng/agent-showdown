@@ -1,0 +1,40 @@
+/* What is rebuilt, and what survives. Rendered to ../img/lifetimes.svg */
+digraph lifetimes {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [color="#888888"];
+
+  subgraph cluster_process {
+    label="  PROCESS — built once by cli/main.py, the composition root  ";
+    style="rounded"; color="#888888"; fontsize=10; labeljust="l";
+    p1 [label="Engine  ·  PlayerRegistry  ·  Scoreboard  ·  SpellBook  ·  GameFactory\lClock  ·  Console  ·  FileSystem  ·  Randomizer  ·  EventChannel  ·  Logger\lthe three GameListeners  ·  AppConfig\l", fillcolor="#f7e3c0"];
+
+    subgraph cluster_registered {
+      label="  WHILE REGISTERED — joins and leaves at any time  ";
+      style="rounded"; color="#888888"; fontsize=10; labeljust="l";
+      p2 [label="Player instances\lbuilt from AgentConfig, reused across every match they play\l", fillcolor="#cfe3f7"];
+
+      subgraph cluster_match {
+        label="  PER MATCH — a fresh Game, from nothing  ";
+        style="rounded"; color="#888888"; fontsize=10; labeljust="l";
+        p3 [label="Game  ·  positions  ·  health (back to 100)  ·  each robot's own Spell instances\l", fillcolor="#d8ecd8"];
+
+        subgraph cluster_turn {
+          label="  PER TURN  "; style="rounded"; color="#888888"; fontsize=10; labeljust="l";
+          p4 [label="GameView out  →  PlayerTurn back  →  Action, SpellEffect\l", fillcolor="#e6e6e6"];
+        }
+      }
+    }
+  }
+
+  // Stack the nested boxes vertically instead of side by side.
+  p4 -> p3 [style=invis];
+  p3 -> p2 [style=invis];
+  p2 -> p1 [style=invis];
+
+  survives [shape=note, fillcolor="#cfe3f7", fontsize=9,
+            label="Read it inside-out: the Scoreboard sits in the\noutermost box precisely because wins, deaths\nand eliminations must outlive the Game that\nearned them — a match is rebuilt from nothing\nevery time.\n\nThe same reasoning puts the PlayerRegistry\nthere: the roster changes between matches,\nso it cannot belong to one."];
+  p1 -> survives [style=dashed, arrowhead=none];
+}

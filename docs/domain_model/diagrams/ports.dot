@@ -1,0 +1,40 @@
+/* The supporting domains: what each one is for, and what stands in for it in tests.
+   Rendered to ../img/ports.svg */
+digraph ports {
+  bgcolor="transparent";
+  rankdir=LR;
+  compound=true;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  subgraph cluster_edge {
+    label="  EDGE MODULES — the only places IO is allowed  ";
+    style="rounded,dashed"; color="#888888"; fontsize=10;
+    clock  [label="Clock\nnow() · sleep()\nthe WHOLE time edge", fillcolor="#f6cfcf"];
+    con    [label="Console\nwrite_line()\nno print() anywhere else", fillcolor="#f6cfcf"];
+    fs     [label="FileSystem\nread_text() · write_text()\nno open() anywhere else", fillcolor="#f6cfcf"];
+    rnd    [label="Randomizer\nchoice()\nnondeterministic input,\nconfined like the clock", fillcolor="#f6cfcf"];
+    chan   [label="EventChannel\npublish() · subscribe()\nwhere the game thread meets HTTP", fillcolor="#f6cfcf"];
+    reg2   [label="PlayerRegistry\nthe fourth concurrency site,\nsame reason as EventChannel", fillcolor="#f6cfcf"];
+  }
+
+  subgraph cluster_pure {
+    label="  PURE SUPPORTING DOMAINS  ";
+    style="rounded,dashed"; color="#888888"; fontsize=10;
+    log    [label="Logger + LogFormatter\nLogRecord, LogLevel\ncolour chosen in the pure formatter", fillcolor="#e6e6e6"];
+    cfg    [label="ConfigLoader\nAppConfig, AgentConfig\nextra=\"forbid\": a typo must fail loudly", fillcolor="#e6e6e6"];
+    ba     [label="AgentRoster · AgentPlayerFactory\nTurnPlanner\nthe model call lives behind TurnPlanner", fillcolor="#e6e6e6"];
+    ac     [label="AgentClient  (+ AgentClientError)\nthe A2A transport seam\nmodules/agent_client is still empty", fillcolor="#e6e6e6"];
+  }
+
+  eng [label="Engine\nTHE FACADE\nevery use case is a method here;\nfrontends are thin adapters", fillcolor="#f7e3c0"];
+
+  // lhead attaches the edge to the cluster boundary rather than to one node inside it.
+  eng -> clock [lhead="cluster_edge", label="  injected into\l  whatever needs them\l"];
+  eng -> log   [lhead="cluster_pure", label="  and these"];
+
+  note [shape=note, fillcolor="#cfe3f7", fontsize=9,
+        label="Every one of these has an in-memory twin in\ntests/fakes — FrozenClock, InMemoryConsole,\nInMemoryFileSystem, FixedRandomizer … which is\nwhat makes the whole suite runnable with no\nnetwork, no disk and no wall clock."];
+  clock -> note [style=dashed, arrowhead=none];
+}

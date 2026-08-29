@@ -1,0 +1,35 @@
+/* The whole contract between the game and a contestant. Rendered to ../img/turn-exchange.svg */
+digraph turn_exchange {
+  bgcolor="transparent";
+  rankdir=TB;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  game [label="Game", fillcolor="#d8ecd8"];
+
+  subgraph cluster_out {
+    label="  GameView — the ENTIRE world it can see  "; style="rounded"; color="#bbbbbb"; fontsize=10;
+    view [label="board: Board\lposition: Position   ← its own square\lround_number: int\lhealth: int\lopponents: tuple[Opponent, ...]\lspells: tuple[SpellInfo, ...]\l",
+          fillcolor="#cfe3f7"];
+  }
+
+  player [label="Player\ntake_turn(view) -> PlayerTurn\n\nmay be a remote agent:\nanything it raises becomes turn_failed",
+          fillcolor="#f7e3c0"];
+
+  subgraph cluster_in {
+    label="  PlayerTurn — the plan it answers with  "; style="rounded"; color="#bbbbbb"; fontsize=10;
+    turn [label="reasoning: str\lactions: tuple[Action, ...]   ≤ 8\l", fillcolor="#d8ecd8"];
+    action [label="Action  (flat, not a union)\lkind: MOVE | CAST\ldirection: Direction\lspell: str   — ignored when MOVE\l", fillcolor="#d8ecd8"];
+    turn -> action [label="  0..8, applied in order"];
+  }
+
+  game   -> view   [label="  built fresh\l  every turn\l"];
+  view   -> player [label="  handed in"];
+  player -> turn   [label="  answers"];
+  turn   -> game   [label="  judged WHOLE,\l  then applied\l"];
+
+  note [shape=note, fillcolor="#e6e6e6", fontsize=9,
+        label="A contestant never sees the board object,\nthe other robots' plans, or the Scoreboard.\n\nAction is deliberately FLAT rather than a\nMove|Cast union: PlayerTurn doubles as an\nLLM structured-output schema, and a flat\nobject survives guided decoding where an\nanyOf often does not."];
+  action -> note [style=dashed, arrowhead=none];
+}

@@ -1,0 +1,35 @@
+/* What one Game owns, and what it deliberately does not. Rendered to ../img/game-aggregate.svg */
+digraph game_aggregate {
+  bgcolor="transparent";
+  rankdir=LR;
+  fontname="Helvetica"; fontcolor="#888888";
+  node [fontname="Helvetica", fontsize=10, style="filled", color="#00000000", fontcolor="#1a1a1a", shape=box];
+  edge [fontname="Helvetica", fontsize=9, color="#888888", fontcolor="#888888"];
+
+  subgraph cluster_game {
+    label="  Game — one match, rebuilt from nothing each time  ";
+    style="rounded,dashed"; color="#888888"; fontsize=10;
+
+    board  [label="board: Board", fillcolor="#e6e6e6"];
+    order  [label="players: list[Player]\nregistration order", fillcolor="#cfe3f7"];
+    pos    [label="positions:\ndict[Player, Position]", fillcolor="#d8ecd8"];
+    health [label="health:\ndict[Player, int]\n0..100", fillcolor="#d8ecd8"];
+    spells [label="spells:\ndict[Player, tuple[Spell, ...]]", fillcolor="#d8ecd8"];
+    stopf  [label="_stopping: bool\nread between turns", fillcolor="#e6e6e6"];
+  }
+
+  score  [label="Scoreboard\nINJECTED, shared, outlives the match", fillcolor="#f7e3c0"];
+  book   [label="SpellBook\nINJECTED, one fresh set per robot", fillcolor="#f7e3c0"];
+  clock  [label="Clock\nINJECTED — the only way it reads time", fillcolor="#f6cfcf"];
+  listen [label="GameListener × n\nnotified in registration order", fillcolor="#d8ecd8"];
+
+  book  -> spells [label="  create_spells()\l  per registration\l"];
+  pos   -> score  [style=invis];
+  order -> score  [label="  record_turn / _elimination\l  / _death / _win\l"];
+  order -> clock  [label="  now() to time a turn"];
+  order -> listen [label="  every event"];
+
+  key [shape=note, fillcolor="#cfe3f7", fontsize=9,
+       label="Every per-robot map is keyed by the Player\nOBJECT, never by name — two contestants\nare allowed to share a name.\n\nNothing here survives the match. Anything\nthat must is injected from outside."];
+  spells -> key [style=dashed, arrowhead=none];
+}
